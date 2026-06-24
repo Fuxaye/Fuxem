@@ -17,6 +17,7 @@ ANALYTICS_DIR="/var/www/analytics"
 HTPASSWD_FILE="/etc/nginx/.htpasswd_fuxem_analytics"
 GOACCESS_CONF="/etc/goaccess/fuxem.conf"
 CRON_FILE="/etc/cron.d/fuxem-goaccess"
+SNIPPET_FILE="/etc/nginx/snippets/fuxem-analytics.conf"
 
 if [[ -z "${DOMAIN}" ]]; then
   echo "Usage: sudo bash deploy/setup-free-analytics.sh <domain> [analytics-username] [nginx-site-path] [nginx-access-log]"
@@ -54,36 +55,42 @@ cat > "${GOACCESS_CONF}" <<EOF
 time-format %T
 date-format %d/%b/%Y
 log-format COMBINED
-real-time-html true
-ws-url wss://${DOMAIN}/analytics/ws
 output ${ANALYTICS_DIR}/index.html
 EOF
 
-echo "Configuring Nginx analytics locations in ${NGINX_SITE}..."
-if ! grep -q "fuxem_analytics_location" "${NGINX_SITE}"; then
-  cat >> "${NGINX_SITE}" <<'EOF'
+echo "Writing Nginx snippet to ${SNIPPET_FILE}..."
+mkdir -p /etc/nginx/snippets
+cat > "${SNIPPET_FILE}" <<'EOF'
+# Include this inside the existing server {} block for your site.
 
-    # fuxem_analytics_location
-    location /analytics/ {
-        alias /var/www/analytics/;
-        index index.html;
-        auth_basic "Restricted Analytics";
-        auth_basic_user_file /etc/nginx/.htpasswd_fuxem_analytics;
-    }
-
-    # fuxem_analytics_websocket
-    location /analytics/ws {
-        proxy_pass http://127.0.0.1:7890;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        auth_basic "Restricted Analytics";
-        auth_basic_user_file /etc/nginx/.htpasswd_fuxem_analytics;
-    }
+location /analytics/ {
+    alias /var/www/analytics/;
+    index index.html;
+    auth_basic "Restricted Analytics";
+    auth_basic_user_file /etc/nginx/.htpasswd_fuxem_analytics;
+}
 EOF
+
+if ! grep -q "include /etc/nginx/snippets/fuxem-analytics.conf;" "${NGINX_SITE}"; then
+  echo "Adding snippet include to ${NGINX_SITE}..."
+  if grep -q "server_name .*;" "${NGINX_SITE}"; then
+    awk '
+      BEGIN { inserted = 0 }
+      {
+        print
+        if (!inserted && $0 ~ /server_name .*;/ ) {
+          print "        include /etc/nginx/snippets/fuxem-analytics.conf;"
+          inserted = 1
+        }
+      }
+    ' "${NGINX_SITE}" > "${NGINX_SITE}.tmp"
+    mv "${NGINX_SITE}.tmp" "${NGINX_SITE}"
+  else
+    echo "Could not find location / block in ${NGINX_SITE}; add this line manually inside your server block:"
+    echo "include /etc/nginx/snippets/fuxem-analytics.conf;"
+  fi
 else
-  echo "Analytics location block already present, skipping append."
+  echo "Snippet include already present, skipping update."
 fi
 
 echo "Validating Nginx config..."
@@ -107,3 +114,4 @@ echo
 echo "Done. Open: https://${DOMAIN}/analytics/"
 echo "Log file: /var/log/goaccess-fuxem.log"
 echo "Auth file: ${HTPASSWD_FILE}"
+echo "Snippet: ${SNIPPET_FILE}"
