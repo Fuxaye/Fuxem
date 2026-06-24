@@ -58,39 +58,35 @@ log-format COMBINED
 output ${ANALYTICS_DIR}/index.html
 EOF
 
-echo "Writing Nginx snippet to ${SNIPPET_FILE}..."
-mkdir -p /etc/nginx/snippets
-cat > "${SNIPPET_FILE}" <<'EOF'
-# Include this inside the existing server {} block for your site.
-
-location /analytics/ {
-    alias /var/www/analytics/;
-    index index.html;
-    auth_basic "Restricted Analytics";
-    auth_basic_user_file /etc/nginx/.htpasswd_fuxem_analytics;
-}
-EOF
-
-if ! grep -q "include /etc/nginx/snippets/fuxem-analytics.conf;" "${NGINX_SITE}"; then
-  echo "Adding snippet include to ${NGINX_SITE}..."
-  if grep -q "server_name .*;" "${NGINX_SITE}"; then
-    awk '
-      BEGIN { inserted = 0 }
-      {
-        print
-        if (!inserted && $0 ~ /server_name .*;/ ) {
-          print "        include /etc/nginx/snippets/fuxem-analytics.conf;"
-          inserted = 1
-        }
-      }
-    ' "${NGINX_SITE}" > "${NGINX_SITE}.tmp"
-    mv "${NGINX_SITE}.tmp" "${NGINX_SITE}"
-  else
-    echo "Could not find location / block in ${NGINX_SITE}; add this line manually inside your server block:"
-    echo "include /etc/nginx/snippets/fuxem-analytics.conf;"
-  fi
+if ! grep -q "fuxem_analytics_location" "${NGINX_SITE}"; then
+  echo "Inserting analytics location block into ${NGINX_SITE}..."
+  # Insert before the last closing } in the file (server block close)
+  python3 - "${NGINX_SITE}" <<'PYEOF'
+import sys
+path = sys.argv[1]
+block = """
+    # fuxem_analytics_location
+    location /analytics/ {
+        alias /var/www/analytics/;
+        index index.html;
+        auth_basic "Restricted Analytics";
+        auth_basic_user_file /etc/nginx/.htpasswd_fuxem_analytics;
+    }
+"""
+with open(path, "r") as f:
+    content = f.read()
+# Find last closing brace at start of line (server block end)
+idx = content.rfind("\n}")
+if idx == -1:
+    print("ERROR: could not find server block closing brace")
+    sys.exit(1)
+content = content[:idx] + block + content[idx:]
+with open(path, "w") as f:
+    f.write(content)
+print("Done.")
+PYEOF
 else
-  echo "Snippet include already present, skipping update."
+  echo "Analytics location block already present, skipping."
 fi
 
 echo "Validating Nginx config..."
