@@ -1,5 +1,6 @@
 'use client'
 
+import type React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import {
   Bookmark,
@@ -240,6 +241,8 @@ const uploadSamples = [
   { title: 'Cover image', type: 'photo', status: 'Synced to CDN' },
 ]
 
+const moodChips = ['After Hours', 'Soft Neon', 'VIP Studio', 'Late Lounge']
+
 function formatNumber(value: number): string {
   return Intl.NumberFormat('en-US').format(value)
 }
@@ -275,8 +278,12 @@ function PageHeader({ title, description, action }: { title: string; description
   )
 }
 
-export default function CreatorPlatformShell() {
-  const [activeView, setActiveView] = useState<ViewKey>('home')
+type CreatorPlatformShellProps = {
+  initialView?: ViewKey
+}
+
+export default function CreatorPlatformShell({ initialView = 'home' }: CreatorPlatformShellProps) {
+  const [activeView, setActiveView] = useState<ViewKey>(initialView)
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({})
   const [bookmarkedPosts, setBookmarkedPosts] = useState<Record<string, boolean>>({})
   const [followingCreators, setFollowingCreators] = useState<Record<string, boolean>>({})
@@ -284,22 +291,85 @@ export default function CreatorPlatformShell() {
   const [friendTab, setFriendTab] = useState<'Friends' | 'Requests' | 'Suggestions'>('Friends')
   const [activeRoomId, setActiveRoomId] = useState(rooms[0]?.id || '')
   const [chatDraft, setChatDraft] = useState('')
+  const [chatMessagesByRoom, setChatMessagesByRoom] = useState<Record<string, Room['messages']>>(() =>
+    Object.fromEntries(rooms.map((room) => [room.id, room.messages]))
+  )
   const [postDraft, setPostDraft] = useState('Share a new post, a fresh clip, or a behind-the-scenes note...')
   const [uploadMessage, setUploadMessage] = useState('')
   const [uploadBusy, setUploadBusy] = useState(false)
   const [uploadResults, setUploadResults] = useState<Array<{ kind: string; url: string }>>([])
-  const [dashboardData, setDashboardData] = useState<{ profileViews: number; connections: number; messagesReceived: number; engagementPercent: number; totalVideos: number; publicVideos: number; unreadMessages: number; pendingReports: number } | null>(null)
+  const [savedMedia, setSavedMedia] = useState<{ photoUrls: string[]; videoUrls: string[]; counts: { photos: number; videos: number } } | null>(null)
+  const [dashboardData, setDashboardData] = useState<{
+    profileViews: number
+    connections: number
+    messagesReceived: number
+    engagementPercent: number
+    totalVideos: number
+    publicVideos: number
+    unreadMessages: number
+    pendingReports: number
+    recentActivity: Array<{ id: string; action: string; time: string }>
+    generatedAt: string | null
+  } | null>(null)
 
   const activeRoom = useMemo(() => rooms.find((room) => room.id === activeRoomId) || rooms[0], [activeRoomId])
+  const activeMessages = activeRoom ? chatMessagesByRoom[activeRoom.id] || activeRoom.messages : []
 
   useEffect(() => {
     const syncView = () => setActiveView(getViewFromHash())
 
-    syncView()
+    if (window.location.hash) {
+      syncView()
+    } else {
+      setActiveView(initialView)
+    }
+
     window.addEventListener('hashchange', syncView)
 
     return () => window.removeEventListener('hashchange', syncView)
-  }, [])
+  }, [initialView])
+
+  useEffect(() => {
+    if (activeView !== 'uploads') {
+      return
+    }
+
+    let cancelled = false
+
+    async function loadSavedMedia() {
+      try {
+        const response = await fetch('/api/member/media', { cache: 'no-store' })
+
+        if (!response.ok) {
+          return
+        }
+
+        const payload = (await response.json()) as {
+          photoUrls?: string[]
+          videoUrls?: string[]
+          counts?: { photos: number; videos: number }
+        }
+
+        if (!cancelled) {
+          setSavedMedia({
+            photoUrls: payload.photoUrls || [],
+            videoUrls: payload.videoUrls || [],
+            counts: payload.counts || { photos: 0, videos: 0 },
+          })
+        }
+      } catch {
+        if (!cancelled) {
+          setSavedMedia(null)
+        }
+      }
+    }
+
+    void loadSavedMedia()
+
+    return () => {
+      cancelled = true
+    }
+  }, [activeView])
 
   useEffect(() => {
     if (activeView !== 'dashboard') {
@@ -318,10 +388,17 @@ export default function CreatorPlatformShell() {
         const payload = (await response.json()) as {
           stats?: { profileViews: number; connections: number; messagesReceived: number; engagementPercent: number }
           modelStats?: { totalVideos: number; publicVideos: number; unreadMessages: number; pendingReports: number }
+          recentActivity?: Array<{ id: string; action: string; time: string }>
+          generatedAt?: string
         }
 
         if (!cancelled && payload.stats && payload.modelStats) {
-          setDashboardData({ ...payload.stats, ...payload.modelStats })
+          setDashboardData({
+            ...payload.stats,
+            ...payload.modelStats,
+            recentActivity: payload.recentActivity || [],
+            generatedAt: payload.generatedAt || null,
+          })
         }
       } catch {
         if (!cancelled) {
@@ -384,13 +461,25 @@ export default function CreatorPlatformShell() {
         body: payload,
       })
 
-      const result = (await response.json().catch(() => null)) as { error?: string; url?: string; kind?: string } | null
+      const result = (await response.json().catch(() => null)) as {
+        error?: string
+        url?: string
+        kind?: string
+        counts?: { photos: number; videos: number }
+        photoUrls?: string[]
+        videoUrls?: string[]
+      } | null
 
       if (!response.ok || !result?.url || !result.kind) {
         throw new Error(result?.error || 'Upload failed.')
       }
 
       setUploadResults((current) => [{ kind: result.kind || kind, url: result.url as string }, ...current].slice(0, 6))
+      setSavedMedia({
+        photoUrls: result.photoUrls || savedMedia?.photoUrls || [],
+        videoUrls: result.videoUrls || savedMedia?.videoUrls || [],
+        counts: result.counts || savedMedia?.counts || { photos: 0, videos: 0 },
+      })
       setUploadMessage('Upload complete and saved to CDN.')
       event.currentTarget.reset()
     } catch (error) {
@@ -405,18 +494,34 @@ export default function CreatorPlatformShell() {
       return
     }
 
+    if (activeRoom) {
+      setChatMessagesByRoom((current) => ({
+        ...current,
+        [activeRoom.id]: [
+          ...(current[activeRoom.id] || activeRoom.messages),
+          {
+            id: `self-${Date.now()}`,
+            fromSelf: true,
+            sender: 'You',
+            body: chatDraft.trim(),
+            time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+          },
+        ],
+      }))
+    }
+
     setChatDraft('')
   }
 
   const sidebar = (
-    <aside className="fixed inset-y-0 left-0 z-30 flex w-20 flex-col border-r border-[rgba(124,92,252,0.12)] bg-[#0D0C14]/95 px-3 py-4 backdrop-blur-xl lg:w-72 lg:px-5">
+    <aside className="fixed inset-y-0 left-0 z-30 flex w-20 flex-col border-r border-[rgba(124,92,252,0.16)] bg-[linear-gradient(180deg,rgba(13,12,20,0.98),rgba(20,16,36,0.96))] px-3 py-4 backdrop-blur-xl lg:w-72 lg:px-5">
       <div className="flex items-center gap-3 px-1">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#7C5CFC,#9B7BFF)] text-lg font-bold text-white shadow-lg shadow-violet-500/20">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#7C5CFC,#9B7BFF)] text-lg font-bold text-white shadow-[0_12px_32px_rgba(124,92,252,0.45)]">
           f
         </div>
         <div className="hidden lg:block">
           <div className="font-heading text-lg font-bold tracking-[0.08em] text-[#EDE9FF]">fuxem</div>
-          <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#6B6585]">creator social</div>
+          <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8f87b2]">creator social</div>
         </div>
       </div>
 
@@ -430,8 +535,9 @@ export default function CreatorPlatformShell() {
               key={view.key}
               type="button"
               onClick={() => goTo(view.key)}
-              className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-left transition ${active ? 'bg-[rgba(124,92,252,0.16)] text-[#7C5CFC]' : 'text-[#C4BDEE] hover:bg-white/5 hover:text-[#EDE9FF]'}`}
+              className={`group relative flex items-center gap-3 rounded-2xl px-3 py-3 text-left transition duration-200 ${active ? 'bg-[linear-gradient(135deg,rgba(124,92,252,0.22),rgba(255,107,107,0.12))] text-[#cabdff] shadow-[0_8px_24px_rgba(124,92,252,0.25)]' : 'text-[#C4BDEE] hover:bg-white/5 hover:text-[#EDE9FF]'}`}
             >
+              {active ? <span className="absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r-full bg-[#ff6b6b]" /> : null}
               <Icon size={18} strokeWidth={active ? 2.25 : 2} />
               <span className="hidden text-sm font-semibold lg:block">{view.label}</span>
             </button>
@@ -439,7 +545,7 @@ export default function CreatorPlatformShell() {
         })}
       </nav>
 
-      <div className="mt-4 rounded-[1.15rem] border border-[rgba(124,92,252,0.12)] bg-[#13111E] p-3 lg:p-4">
+      <div className="mt-4 rounded-[1.15rem] border border-[rgba(124,92,252,0.2)] bg-[linear-gradient(180deg,#13111E,#1A1730)] p-3 lg:p-4">
         <div className="flex items-center gap-3">
           <Avatar
             src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80"
@@ -459,12 +565,38 @@ export default function CreatorPlatformShell() {
   )
 
   return (
-    <div className="min-h-screen bg-[#0D0C14] text-[#EDE9FF]">
+    <div className="relative min-h-screen overflow-hidden bg-[#0D0C14] text-[#EDE9FF]">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-24 top-6 h-72 w-72 rounded-full bg-[#7C5CFC]/20 blur-3xl" />
+        <div className="absolute left-1/3 top-32 h-56 w-56 rounded-full bg-[#FF6B6B]/15 blur-3xl" />
+        <div className="absolute -right-16 bottom-12 h-80 w-80 rounded-full bg-[#3DCFCF]/10 blur-3xl" />
+      </div>
       {sidebar}
 
       <main className="min-h-screen pl-20 lg:pl-72">
         <div className="mx-auto flex min-h-screen max-w-[1750px] gap-6 px-4 py-6 sm:px-6 lg:px-8">
           <section className="min-w-0 flex-1 space-y-6">
+            {activeView === 'home' ? (
+              <div className="relative overflow-hidden rounded-3xl border border-[rgba(124,92,252,0.26)] bg-[linear-gradient(120deg,#171229_0%,#1e1638_40%,#2a1a3f_100%)] p-6 shadow-[0_22px_70px_rgba(64,32,124,0.35)]">
+                <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-[#ff6b6b]/20 blur-3xl" />
+                <div className="absolute -bottom-12 left-20 h-40 w-40 rounded-full bg-[#3DCFCF]/14 blur-3xl" />
+                <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                  <div>
+                    <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#c6b9ff]">Midnight Pulse</p>
+                    <h2 className="mt-2 text-3xl font-bold leading-tight text-white md:text-4xl">Dark social energy with premium creator heat</h2>
+                    <p className="mt-3 max-w-2xl text-sm leading-6 text-[#d6ceff]">Tonight's drop leans cinematic and magnetic. Post faster, chat deeper, and keep your profile impossible to ignore.</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {moodChips.map((chip) => (
+                      <span key={chip} className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-white/90">
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             <div className="ui-shell-panel px-5 py-5 sm:px-6">
               <PageHeader
                 title={
@@ -499,7 +631,7 @@ export default function CreatorPlatformShell() {
                   <section className="ui-shell-panel p-5">
                     <div className="flex items-center justify-between gap-3">
                       <h2 className="text-lg font-semibold text-[#EDE9FF]">Stories</h2>
-                      <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#6B6585]">Live now</span>
+                      <span className="rounded-full border border-[#FF6B6B]/30 bg-[#FF6B6B]/10 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-[#ffb1b1]">Live now</span>
                     </div>
                     <div className="mt-4 flex gap-4 overflow-x-auto pb-1 ui-scrollbar-hide">
                       {storyAvatars.map((story, index) => (
@@ -547,7 +679,7 @@ export default function CreatorPlatformShell() {
                       const bookmarked = Boolean(bookmarkedPosts[post.id])
 
                       return (
-                        <article key={post.id} className="ui-shell-panel overflow-hidden">
+                        <article key={post.id} className="ui-shell-panel overflow-hidden transition duration-200 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(124,92,252,0.22)]">
                           <div className="p-5">
                             <div className="flex items-center gap-3">
                               <Avatar src={`https://images.unsplash.com/${post.id === 'post-1' ? 'photo-1488426862026-3ee34a7d66df' : post.id === 'post-2' ? 'photo-1534528741775-53994a69daeb' : 'photo-1515886657613-9f3515b0c78f'}?auto=format&fit=crop&w=200&q=80`} alt={`${post.name} avatar`} className="h-12 w-12" />
@@ -567,7 +699,10 @@ export default function CreatorPlatformShell() {
                             <p className="mt-4 text-sm leading-6 text-[#EDE9FF]">{post.text}</p>
 
                             {post.image ? (
-                              <img src={post.image} alt={post.imageAlt || `${post.name} post`} className="mt-4 aspect-[4/3] w-full rounded-[1rem] object-cover" loading="lazy" />
+                              <div className="relative mt-4 overflow-hidden rounded-[1rem]">
+                                <img src={post.image} alt={post.imageAlt || `${post.name} post`} className="aspect-[4/3] w-full object-cover transition duration-300 hover:scale-[1.03]" loading="lazy" />
+                                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+                              </div>
                             ) : null}
 
                             <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-mono uppercase tracking-[0.12em] text-[#6B6585]">
@@ -808,7 +943,7 @@ export default function CreatorPlatformShell() {
                     </button>
                   </header>
                   <div className="flex-1 space-y-4 overflow-y-auto py-4 ui-scrollbar-hide">
-                    {activeRoom?.messages.map((message) => (
+                    {activeMessages.map((message) => (
                       <div key={message.id} className={`flex ${message.fromSelf ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[72%] rounded-[1rem] px-4 py-3 ${message.fromSelf ? 'bg-[linear-gradient(135deg,#7C5CFC,#9B7BFF)] text-white' : 'bg-[#1E1C2E] text-[#EDE9FF]'}`}>
                           <div className="mb-1 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] opacity-70">
@@ -984,6 +1119,12 @@ export default function CreatorPlatformShell() {
                         </div>
                         <Camera className="text-[#7C5CFC]" />
                       </div>
+                      {savedMedia ? (
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                          <MiniStat label="Saved Photos" value={formatNumber(savedMedia.counts.photos)} />
+                          <MiniStat label="Saved Videos" value={formatNumber(savedMedia.counts.videos)} />
+                        </div>
+                      ) : null}
                       <div className="mt-4 space-y-3">
                         {uploadSamples.map((sample) => (
                           <div key={sample.title} className="flex items-center justify-between rounded-2xl bg-[#1E1C2E] px-4 py-3 text-sm">
@@ -1007,6 +1148,37 @@ export default function CreatorPlatformShell() {
                               <div className="mt-1 break-all">{item.url}</div>
                             </a>
                           ))}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {savedMedia && (savedMedia.photoUrls.length > 0 || savedMedia.videoUrls.length > 0) ? (
+                      <div className="ui-shell-panel p-5">
+                        <h3 className="text-sm font-semibold text-[#EDE9FF]">Saved media on your account</h3>
+                        <div className="mt-4 grid gap-4 md:grid-cols-2">
+                          <div className="space-y-3">
+                            <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#6B6585]">Photos</div>
+                            {savedMedia.photoUrls.length ? (
+                              savedMedia.photoUrls.slice(0, 4).map((url, index) => (
+                                <img key={`${url}-${index}`} src={url} alt={`Uploaded photo ${index + 1}`} className="aspect-[4/5] w-full rounded-[1rem] border border-[rgba(124,92,252,0.12)] object-cover" loading="lazy" />
+                              ))
+                            ) : (
+                              <div className="rounded-2xl bg-[#1E1C2E] px-4 py-3 text-sm text-[#6B6585]">No photos saved yet.</div>
+                            )}
+                          </div>
+                          <div className="space-y-3">
+                            <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#6B6585]">Videos</div>
+                            {savedMedia.videoUrls.length ? (
+                              savedMedia.videoUrls.slice(0, 4).map((url, index) => (
+                                <a key={`${url}-${index}`} href={url} target="_blank" rel="noreferrer" className="block rounded-2xl border border-[rgba(124,92,252,0.12)] bg-[#1E1C2E] px-4 py-3 text-sm text-[#C4BDEE] transition hover:border-[rgba(124,92,252,0.24)] hover:text-[#EDE9FF]">
+                                  <div className="font-mono text-[11px] uppercase tracking-[0.12em] text-[#6B6585]">Video {index + 1}</div>
+                                  <div className="mt-1 break-all">{url}</div>
+                                </a>
+                              ))
+                            ) : (
+                              <div className="rounded-2xl bg-[#1E1C2E] px-4 py-3 text-sm text-[#6B6585]">No videos saved yet.</div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ) : null}
@@ -1034,14 +1206,17 @@ export default function CreatorPlatformShell() {
                 </div>
                 <div className="ui-shell-panel p-5">
                   <h3 className="text-lg font-semibold text-[#EDE9FF]">Recent Activity</h3>
+                  {dashboardData?.generatedAt ? (
+                    <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.14em] text-[#6B6585]">Synced {new Date(dashboardData.generatedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</p>
+                  ) : null}
                   <div className="mt-4 space-y-3">
-                    {[
-                      'Profile updated 12 minutes ago',
-                      'Three new connections accepted today',
-                      'Public video crossed 1K views',
-                      'One report requires moderation review',
-                    ].map((item) => (
-                      <div key={item} className="rounded-2xl bg-[#1E1C2E] px-4 py-3 text-sm text-[#C4BDEE]">{item}</div>
+                    {(dashboardData?.recentActivity.length ? dashboardData.recentActivity : [
+                      { id: 'fallback-1', action: 'No recent activity yet', time: 'Just now' },
+                    ]).map((item) => (
+                      <div key={item.id} className="rounded-2xl bg-[#1E1C2E] px-4 py-3 text-sm text-[#C4BDEE]">
+                        <div>{item.action}</div>
+                        <div className="mt-1 font-mono text-[11px] uppercase tracking-[0.12em] text-[#6B6585]">{item.time}</div>
+                      </div>
                     ))}
                   </div>
                 </div>
