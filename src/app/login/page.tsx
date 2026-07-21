@@ -22,7 +22,7 @@ function ErrorMsg({ msg }: { msg: string }) {
 function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const returnTo = searchParams.get('returnTo') || ROUTES.DASHBOARD
+  const returnTo = searchParams.get('returnTo') || ROUTES.ME_PROFILE
   const urlError = searchParams.get('error') || ''
   const verified = searchParams.get('verified') === '1'
 
@@ -77,7 +77,7 @@ function LoginContent() {
         return
       }
 
-      router.push(data.returnTo || ROUTES.DASHBOARD)
+      router.push(data.returnTo || ROUTES.ME_PROFILE)
     } catch {
       setError('Network error. Please try again.')
       setStatus('idle')
@@ -120,7 +120,7 @@ function LoginContent() {
         return
       }
 
-      router.push(data.returnTo || ROUTES.DASHBOARD)
+      router.push(data.returnTo || ROUTES.ME_PROFILE)
     } catch {
       setError('Network error. Please try again.')
       setStatus('idle')

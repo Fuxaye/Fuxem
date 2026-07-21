@@ -23,11 +23,11 @@ import type { AuthTokenPayload } from '@/lib/types'
 
 function getSafeReturnTo(returnTo: string | null): string {
   if (!returnTo) {
-    return ROUTES.ME
+    return ROUTES.ME_PROFILE
   }
 
   if (!returnTo.startsWith('/') || returnTo.startsWith('//')) {
-    return ROUTES.ME
+    return ROUTES.ME_PROFILE
   }
 
   return returnTo
@@ -100,7 +100,7 @@ async function parseLoginInput(request: NextRequest): Promise<ParsedLoginInput> 
     identifier: String(formData.get('identifier') || formData.get('email') || formData.get('username') || '').trim().toLowerCase(),
     secret: String(formData.get('secret') || formData.get('password') || '').trim(),
     psk: String(formData.get('psk') || '').trim(),
-    returnTo: getSafeReturnTo(String(formData.get('returnTo') || ROUTES.ME)),
+    returnTo: getSafeReturnTo(String(formData.get('returnTo') || ROUTES.ME_PROFILE)),
     requestKind,
   }
 }

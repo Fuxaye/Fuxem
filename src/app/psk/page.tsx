@@ -12,7 +12,7 @@ const CP = "Copperplate, 'Copperplate Gothic Light', fantasy"
 function PskContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const returnTo = searchParams.get('returnTo') || ROUTES.DASHBOARD
+  const returnTo = searchParams.get('returnTo') || ROUTES.ME_PROFILE
 
   const [psk, setPsk] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading'>('idle')
@@ -48,7 +48,7 @@ function PskContent() {
         return
       }
 
-      router.push(data.returnTo || ROUTES.DASHBOARD)
+      router.push(data.returnTo || ROUTES.ME_PROFILE)
     } catch {
       setError('Network error. Please try again.')
       setStatus('idle')
