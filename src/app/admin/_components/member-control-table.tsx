@@ -8,6 +8,7 @@ type AdminMemberRow = {
   displayName: string
   role: 'SUPREME_ADMIN' | 'ADMIN' | 'MODEL_VERIFIED' | 'MEMBER' | 'BURNER'
   status: 'active' | 'suspended' | 'deleted'
+  canAccessDashboard: boolean
   emailVerified: boolean
   createdAt: string
   lastSeenLabel: string
@@ -71,6 +72,40 @@ export default function MemberControlTable({ initialMembers, actorRole }: Member
     }
   }
 
+  async function toggleDashboardAccess(member: AdminMemberRow) {
+    if (!canManageMember(member.role) || member.status === 'deleted') {
+      return
+    }
+
+    const nextValue = !member.canAccessDashboard
+    setPending((current) => ({ ...current, [member.id]: true }))
+    setErrorMessage(null)
+
+    try {
+      const response = await fetch(`/api/admin/members/${encodeURIComponent(member.id)}/dashboard-access`, {
+        method: 'PATCH',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ canAccessDashboard: nextValue }),
+      })
+
+      const payload = (await response.json().catch(() => null)) as { error?: string } | null
+
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Failed to update dashboard access')
+      }
+
+      setMembers((current) =>
+        current.map((item) => (item.id === member.id ? { ...item, canAccessDashboard: nextValue } : item))
+      )
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to update dashboard access')
+    } finally {
+      setPending((current) => ({ ...current, [member.id]: false }))
+    }
+  }
+
   return (
     <section className="rounded-2xl border border-white/15 bg-black/30 p-4 shadow-xl backdrop-blur">
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -92,6 +127,7 @@ export default function MemberControlTable({ initialMembers, actorRole }: Member
               <th className="px-2 py-2">Role</th>
               <th className="px-2 py-2">Status</th>
               <th className="px-2 py-2">Signals</th>
+              <th className="px-2 py-2">Dashboard</th>
               <th className="px-2 py-2">Joined</th>
               <th className="px-2 py-2">Last Seen</th>
               <th className="px-2 py-2 text-right">Action</th>
@@ -126,6 +162,19 @@ export default function MemberControlTable({ initialMembers, actorRole }: Member
                     <p>Verified: {member.emailVerified ? 'yes' : 'no'}</p>
                     <p>Msgs: {member.messagesSent}</p>
                     <p>Videos: {member.videosPosted}</p>
+                  </td>
+                  <td className="px-2 py-3 align-top text-xs text-stone-300">
+                    <div className="flex flex-col gap-2">
+                      <span>{member.canAccessDashboard ? 'enabled' : 'disabled'}</span>
+                      <button
+                        type="button"
+                        disabled={locked || isPending}
+                        onClick={() => toggleDashboardAccess(member)}
+                        className="rounded-lg border border-violet-300/30 bg-violet-500/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-violet-100 transition hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {member.canAccessDashboard ? 'Revoke' : 'Grant'}
+                      </button>
+                    </div>
                   </td>
                   <td className="px-2 py-3 align-top text-xs text-stone-300">{member.createdAt}</td>
                   <td className="px-2 py-3 align-top text-xs text-stone-300">{member.lastSeenLabel}</td>

@@ -374,6 +374,7 @@ export interface VideoFeedItem {
   videoUrl: string
   thumbnailUrl: string | null
   isPublic: boolean
+  publicAliasPath?: string | null
   views: number
   createdAt: string
   updatedAt: string
@@ -404,6 +405,7 @@ export interface CreateVideoInput {
   videoUrl: string
   thumbnailUrl?: string
   isPublic?: boolean
+  ownershipCertified?: boolean
 }
 
 export interface UpdateVideoInput {

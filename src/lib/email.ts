@@ -16,8 +16,8 @@ const transporter = nodemailer.createTransport({
       : undefined,
 })
 
-const FROM = process.env.SMTP_FROM || SMTP_USER || 'noreply@rockbaybooty.com'
-const SITE_NAME = 'RockBayBooty'
+const FROM = process.env.SMTP_FROM || SMTP_USER || 'noreply@fuxem.com'
+const SITE_NAME = 'fuxem'
 
 function getBaseUrl() {
   const rawCandidates = [

@@ -7,7 +7,7 @@ import prisma from '@/lib/prisma'
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
-  title: 'Classifieds | RockBayBooty Community',
+  title: 'Classifieds | fuxem Community',
   description: 'Browse listings, services, and exclusive content from members',
 }
 

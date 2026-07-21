@@ -5,6 +5,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 
+import LegalLinks from '@/app/_components/legal-links'
+import { HelpPopover } from '@/components/ui/help-popover'
 import { MESSAGES, MIN_AGE, ROUTES } from '@/lib/constants'
 
 const CP = "Copperplate, 'Copperplate Gothic Light', fantasy"
@@ -14,6 +16,7 @@ type RegisterResponse = {
   pin?: string
   username?: string
   accountName?: string
+  requiresEmailVerification?: boolean
   user?: {
     username?: string
     accountName?: string
@@ -133,6 +136,7 @@ function SignupContent() {
       setPin(data.pin || '')
       setGeneratedUsername(data.username || data.user?.username || '')
       setAccountName(data.accountName || data.user?.accountName || '')
+      setError('')
       setStatus('success')
     } catch {
       setError(MESSAGES.ERROR_GENERAL)
@@ -181,6 +185,14 @@ function SignupContent() {
           >
             Sign Up
           </h1>
+          <div className="mt-3 flex items-center justify-center gap-2">
+            <Link
+              href={ROUTES.HELP}
+              className="rounded-full border border-sky-300/30 bg-sky-400/12 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-sky-100 transition hover:bg-sky-300/18"
+            >
+              Need help?
+            </Link>
+          </div>
           {status === 'success' ? (
             <div className="mt-6 space-y-4">
               <p className="rounded-xl border border-emerald-300/35 bg-emerald-400/12 px-4 py-3 text-sm text-emerald-100">
@@ -211,7 +223,9 @@ function SignupContent() {
                   </p>
                   <p className="mt-2 text-2xl tracking-[0.35em] text-amber-100">{pin}</p>
                   <p className="mt-2 text-[11px] text-amber-100/90">
-                    After email verification, enter 5555 on the welcome screen, then log in with your credentials.
+                    {status === 'success' && successMessage === MESSAGES.ACCOUNT_CREATED
+                      ? 'Your account is ready. Log in with your credentials.'
+                      : 'Check your email to finish setup, then log in with your credentials.'}
                   </p>
                 </div>
               )}
@@ -228,8 +242,12 @@ function SignupContent() {
           ) : (
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <label className="block space-y-1">
-                <span className="block text-[10px] uppercase tracking-[0.22em] text-stone-400" style={{ fontFamily: CP }}>
-                  User ID
+                <span className="flex items-center justify-between text-[10px] uppercase tracking-[0.22em] text-stone-400" style={{ fontFamily: CP }}>
+                  <span>User ID</span>
+                  <HelpPopover
+                    title="User ID"
+                    body="Use 3-20 letters, numbers, or underscores. No spaces or symbols."
+                  />
                 </span>
                 <input
                   type="text"
@@ -281,8 +299,12 @@ function SignupContent() {
               </label>
 
               <label className="block space-y-1">
-                <span className="block text-[10px] uppercase tracking-[0.22em] text-stone-400" style={{ fontFamily: CP }}>
-                  Password
+                <span className="flex items-center justify-between text-[10px] uppercase tracking-[0.22em] text-stone-400" style={{ fontFamily: CP }}>
+                  <span>Password</span>
+                  <HelpPopover
+                    title="Password"
+                    body="Use at least 8 characters. Mix letters, numbers, and symbols for stronger security."
+                  />
                 </span>
                 <input
                   type="password"
@@ -345,6 +367,18 @@ function SignupContent() {
                   already a member? log in
                 </Link>
               </p>
+              <p className="text-center text-[10px] uppercase tracking-[0.2em] text-stone-500" style={{ fontFamily: CP }}>
+                <Link href={ROUTES.HELP} className="hover:text-stone-300 transition-colors">
+                  view help center
+                </Link>
+              </p>
+              <p className="text-center text-[10px] leading-relaxed text-stone-500">
+                By creating an account, you agree to the platform policies below.
+              </p>
+              <LegalLinks
+                className="text-center text-[10px] uppercase tracking-[0.2em] text-stone-500"
+                linkClassName="text-stone-500 transition-colors hover:text-stone-300"
+              />
             </form>
           )}
         </div>

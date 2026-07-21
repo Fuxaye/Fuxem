@@ -11,6 +11,8 @@ import {
   LOOKING_FOR_OPTIONS,
   MIN_AGE,
   ORIENTATION_OPTIONS,
+  PRONOUNS_OPTIONS,
+  ROLE_OPTIONS,
   ROUTES,
 } from '@/lib/constants'
 
@@ -23,8 +25,8 @@ type FormState = {
   city: string
   state: string
   country: string
-  gender: string
-  genderOther: string
+  selfDescription: string
+  pronouns: string
   sexualOrientation: string
   orientationOther: string
   bio: string
@@ -46,8 +48,8 @@ const INITIAL_FORM: FormState = {
   city: '',
   state: '',
   country: '',
-  gender: '',
-  genderOther: '',
+  selfDescription: '',
+  pronouns: '',
   sexualOrientation: '',
   orientationOther: '',
   bio: '',
@@ -62,6 +64,7 @@ export default function OnboardingClient({ passcode, quickJoin }: OnboardingClie
   const [lookingFor, setLookingFor] = useState<string[]>([])
   const [interests, setInterests] = useState<string[]>([])
   const [kinks, setKinks] = useState<string[]>([])
+  const [roles, setRoles] = useState<string[]>([])
   const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle')
   const [error, setError] = useState('')
   const [personalCode, setPersonalCode] = useState('')
@@ -105,6 +108,11 @@ export default function OnboardingClient({ passcode, quickJoin }: OnboardingClie
       return
     }
 
+    if (!form.pronouns) {
+      setError('Select your pronouns.')
+      return
+    }
+
     if (kinks.length === 0) {
       setError('Choose at least one kink.')
       return
@@ -124,8 +132,9 @@ export default function OnboardingClient({ passcode, quickJoin }: OnboardingClie
         city: form.city,
         state: form.state || undefined,
         country: form.country || undefined,
-        gender: form.gender,
-        genderOther: form.genderOther || undefined,
+        selfDescription: form.selfDescription || undefined,
+        pronouns: form.pronouns || undefined,
+        roles: roles.length > 0 ? roles : undefined,
         sexualOrientation: form.sexualOrientation,
         orientationOther: form.orientationOther || undefined,
         lookingFor,
@@ -275,16 +284,26 @@ export default function OnboardingClient({ passcode, quickJoin }: OnboardingClie
               />
             </label>
 
+            <label className="grid gap-1 sm:col-span-2">
+              <span className="text-xs uppercase tracking-[0.16em] text-stone-400">How do you describe yourself? (e.g., "straight male CD", "femboy", "trans woman")</span>
+              <input
+                value={form.selfDescription}
+                onChange={(event) => handleFieldChange('selfDescription', event.target.value)}
+                placeholder="Your self-description (optional)"
+                className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm"
+              />
+            </label>
+
             <label className="grid gap-1">
-              <span className="text-xs uppercase tracking-[0.16em] text-stone-400">Gender</span>
+              <span className="text-xs uppercase tracking-[0.16em] text-stone-400">Pronouns</span>
               <select
                 required
-                value={form.gender}
-                onChange={(event) => handleFieldChange('gender', event.target.value)}
+                value={form.pronouns}
+                onChange={(event) => handleFieldChange('pronouns', event.target.value)}
                 className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm"
               >
                 <option value="">Select</option>
-                {GENDER_OPTIONS.map((option) => (
+                {PRONOUNS_OPTIONS.map((option) => (
                   <option key={option} value={option}>{option}</option>
                 ))}
               </select>
@@ -304,18 +323,6 @@ export default function OnboardingClient({ passcode, quickJoin }: OnboardingClie
                 ))}
               </select>
             </label>
-
-            {form.gender === 'Other' && (
-              <label className="grid gap-1 sm:col-span-2">
-                <span className="text-xs uppercase tracking-[0.16em] text-stone-400">Gender (Other)</span>
-                <input
-                  required
-                  value={form.genderOther}
-                  onChange={(event) => handleFieldChange('genderOther', event.target.value)}
-                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm"
-                />
-              </label>
-            )}
 
             {form.sexualOrientation === 'Other' && (
               <label className="grid gap-1 sm:col-span-2">
@@ -393,6 +400,26 @@ export default function OnboardingClient({ passcode, quickJoin }: OnboardingClie
                     type="button"
                     onClick={() => toggleFromList(option, kinks, setKinks)}
                     className={`rounded-full border px-3 py-1 text-xs transition ${selected ? 'border-fuchsia-300/70 bg-fuchsia-400/20 text-fuchsia-100' : 'border-white/15 bg-white/5 text-stone-300 hover:bg-white/10'}`}
+                  >
+                    {option}
+                  </button>
+                )
+              })}
+            </div>
+          </fieldset>
+
+          <fieldset className="grid gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+            <legend className="px-1 text-xs uppercase tracking-[0.16em] text-stone-400">Roles (optional)</legend>
+            <div className="flex flex-wrap gap-2">
+              {ROLE_OPTIONS.map((option) => {
+                const selected = roles.includes(option)
+
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => toggleFromList(option, roles, setRoles)}
+                    className={`rounded-full border px-3 py-1 text-xs transition ${selected ? 'border-purple-300/70 bg-purple-400/20 text-purple-100' : 'border-white/15 bg-white/5 text-stone-300 hover:bg-white/10'}`}
                   >
                     {option}
                   </button>

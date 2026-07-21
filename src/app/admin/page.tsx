@@ -1,16 +1,15 @@
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import type { UserRole } from '@prisma/client'
+import Link from 'next/link'
 
 import { AUTH_COOKIE_NAME, ROUTES } from '@/lib/constants'
 import prisma from '@/lib/prisma'
+import { isStaffRole } from '@/lib/staff-access'
 import type { AuthTokenPayload } from '@/lib/types'
 
 import MemberControlTable from './_components/member-control-table'
 import ReportsQueue from './_components/reports-queue'
-
-type AdminRole = 'SUPREME_ADMIN' | 'ADMIN'
 
 function getTokenPayload(token: string): AuthTokenPayload | null {
   const jwtSecret = process.env.JWT_SECRET
@@ -24,10 +23,6 @@ function getTokenPayload(token: string): AuthTokenPayload | null {
   } catch {
     return null
   }
-}
-
-function isAdminRole(role: UserRole | null | undefined): role is AdminRole {
-  return role === 'SUPREME_ADMIN' || role === 'ADMIN'
 }
 
 function formatDate(date: Date): string {
@@ -64,14 +59,14 @@ export default async function AdminControlPanelPage() {
   const token = cookieStore.get(AUTH_COOKIE_NAME)?.value
 
   if (!token) {
-    redirect(`${ROUTES.LOGIN}?returnTo=${encodeURIComponent('/admin')}`)
+    redirect(`${ROUTES.LOGIN}?returnTo=${encodeURIComponent(ROUTES.ADMIN)}`)
   }
 
   const payload = getTokenPayload(token)
   const userId = payload?.userId || payload?.sub || null
 
   if (!userId) {
-    redirect(`${ROUTES.LOGIN}?returnTo=${encodeURIComponent('/admin')}`)
+    redirect(`${ROUTES.LOGIN}?returnTo=${encodeURIComponent(ROUTES.ADMIN)}`)
   }
 
   const actor = await prisma.user.findUnique({
@@ -84,7 +79,7 @@ export default async function AdminControlPanelPage() {
     },
   })
 
-  if (!actor || !isAdminRole(actor.role)) {
+  if (!actor || !isStaffRole(actor.role)) {
     redirect(ROUTES.ME)
   }
 
@@ -115,6 +110,7 @@ export default async function AdminControlPanelPage() {
           displayName: true,
           role: true,
           status: true,
+          canAccessDashboard: true,
           emailVerified: true,
           createdAt: true,
           updatedAt: true,
@@ -186,6 +182,7 @@ export default async function AdminControlPanelPage() {
     displayName: member.displayName,
     role: member.role,
     status: member.status as 'active' | 'suspended' | 'deleted',
+    canAccessDashboard: member.canAccessDashboard,
     emailVerified: member.emailVerified,
     createdAt: formatDate(member.createdAt),
     lastSeenLabel: formatRelativeSince(member.updatedAt),
@@ -218,6 +215,32 @@ export default async function AdminControlPanelPage() {
           <p className="mt-3 text-xs text-stone-400">
             Signed in as {actor.displayName} (@{actor.username}) • Role: {actor.role}
           </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              href={ROUTES.ADMIN_TOOLS}
+              className="rounded-full border border-cyan-300/30 bg-cyan-500/15 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan-100 transition hover:bg-cyan-400/20"
+            >
+              Open Tools Hub
+            </Link>
+            <a
+              href="#reports"
+              className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-200 transition hover:bg-white/10"
+            >
+              Reports
+            </a>
+            <a
+              href="#members"
+              className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-200 transition hover:bg-white/10"
+            >
+              Member Controls
+            </a>
+            <a
+              href="#audit"
+              className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-200 transition hover:bg-white/10"
+            >
+              Audit Log
+            </a>
+          </div>
         </header>
 
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -248,11 +271,15 @@ export default async function AdminControlPanelPage() {
           <p className="mt-2 text-2xl font-semibold text-amber-100">{pendingReports}</p>
         </section>
 
-        <ReportsQueue initialReports={reportRows} />
+        <section id="reports">
+          <ReportsQueue initialReports={reportRows} />
+        </section>
 
-        <MemberControlTable initialMembers={memberRows} actorRole={actor.role} />
+        <section id="members">
+          <MemberControlTable initialMembers={memberRows} actorRole={actor.role} />
+        </section>
 
-        <section className="rounded-2xl border border-white/15 bg-black/30 p-4 shadow-xl backdrop-blur">
+        <section id="audit" className="rounded-2xl border border-white/15 bg-black/30 p-4 shadow-xl backdrop-blur">
           <div className="mb-4 flex items-center justify-between gap-3">
             <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-stone-200">Audit Log</h2>
             <span className="text-xs text-stone-400">Last {recentAuditEvents.length} events</span>

@@ -73,10 +73,12 @@ export async function onboard(data: {
   city: string
   state?: string
   country?: string
-  gender: string
-  genderOther?: string
+  selfDescription?: string
   pronouns?: string
-  sexualOrientation: string
+  roles?: string[]
+  gender?: string
+  genderOther?: string
+  sexualOrientation?: string
   orientationOther?: string
   intentions?: string
   lookingFor: string[]

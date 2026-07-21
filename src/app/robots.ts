@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/api/', '/dashboard/', '/me/', '/onboarding/'],
     },
-    sitemap: 'https://rockbaybooty.com/sitemap.xml',
+    sitemap: 'https://fuxem.com/sitemap.xml',
   }
 }

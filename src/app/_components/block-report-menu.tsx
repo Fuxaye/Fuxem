@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
-import { reportUser } from '@/lib/api'
+import { blockUser, fetchBlockList, reportUser, unblockUser } from '@/lib/api'
 
 type BlockReportMenuProps = {
   targetId: string
@@ -12,7 +12,33 @@ type BlockReportMenuProps = {
 export default function BlockReportMenu({ targetId, targetName }: BlockReportMenuProps) {
   const [open, setOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isBlocking, setIsBlocking] = useState(false)
+  const [isUnblocking, setIsUnblocking] = useState(false)
+  const [isBlocked, setIsBlocked] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadBlockState() {
+      try {
+        const response = await fetchBlockList()
+        if (!cancelled) {
+          setIsBlocked(response.blocked.some((entry) => entry.blockedId === targetId))
+        }
+      } catch {
+        if (!cancelled) {
+          setIsBlocked(false)
+        }
+      }
+    }
+
+    loadBlockState()
+
+    return () => {
+      cancelled = true
+    }
+  }, [targetId])
 
   async function submitQuickReport() {
     if (isSubmitting) {
@@ -34,6 +60,46 @@ export default function BlockReportMenu({ targetId, targetName }: BlockReportMen
       setNotice('Could not submit report')
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  async function submitBlock() {
+    if (isBlocking || isUnblocking || isBlocked) {
+      return
+    }
+
+    setIsBlocking(true)
+    setNotice(null)
+
+    try {
+      await blockUser(targetId)
+      setIsBlocked(true)
+      setNotice('Member blocked')
+      setOpen(false)
+    } catch {
+      setNotice('Could not block member')
+    } finally {
+      setIsBlocking(false)
+    }
+  }
+
+  async function submitUnblock() {
+    if (isBlocking || isUnblocking || !isBlocked) {
+      return
+    }
+
+    setIsUnblocking(true)
+    setNotice(null)
+
+    try {
+      await unblockUser(targetId)
+      setIsBlocked(false)
+      setNotice('Member unblocked')
+      setOpen(false)
+    } catch {
+      setNotice('Could not unblock member')
+    } finally {
+      setIsUnblocking(false)
     }
   }
 
@@ -65,10 +131,17 @@ export default function BlockReportMenu({ targetId, targetName }: BlockReportMen
           </button>
           <button
             type="button"
-            onClick={() => setOpen(false)}
-            className="block w-full rounded-lg px-2 py-2 text-left text-xs text-rose-200 transition hover:bg-rose-500/20"
+            disabled={isBlocking || isUnblocking}
+            onClick={isBlocked ? submitUnblock : submitBlock}
+            className="block w-full rounded-lg px-2 py-2 text-left text-xs text-rose-200 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Block member
+            {isBlocking
+              ? 'Blocking...'
+              : isUnblocking
+              ? 'Unblocking...'
+              : isBlocked
+              ? 'Unblock member'
+              : 'Block member'}
           </button>
           <p className="px-2 pb-1 pt-2 text-[10px] text-stone-400">ID: {targetId.slice(0, 8)}...</p>
         </div>

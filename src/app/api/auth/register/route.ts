@@ -106,10 +106,8 @@ export async function POST(request: NextRequest) {
     }
 
     const age = calculateAge(dateOfBirth)
-
     const token = crypto.randomBytes(32).toString('hex')
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
     const personalCode = crypto.randomBytes(4).toString('hex').toUpperCase()
     const passwordHash = await bcrypt.hash(password, 10)
 
@@ -139,33 +137,47 @@ export async function POST(request: NextRequest) {
       })
     })
 
-    // Skip email send in development; auto-mark as verified
+    let requiresEmailVerification = true
+    let successMessage = 'Now, verify your email.'
+
     if (process.env.NODE_ENV !== 'production') {
       await prisma.user.update({
         where: { email },
         data: { emailVerified: true, emailVerificationToken: null },
       })
+      requiresEmailVerification = false
+      successMessage = MESSAGES.ACCOUNT_CREATED
     } else {
-      try {
-        await sendVerificationEmail(email, username, token)
-      } catch (error) {
-        await prisma.user.delete({ where: { id: createdUser.id } }).catch(() => undefined)
+      // Check if SMTP is configured
+      const smtpConfigured =
+        process.env.SMTP_HOST && process.env.SMTP_HOST.trim() !== '' &&
+        process.env.SMTP_USER && process.env.SMTP_USER.trim() !== ''
 
-        if (error instanceof Error && error.message === 'Email service is not configured') {
-          return NextResponse.json({ error: MESSAGES.EMAIL_SERVICE_UNAVAILABLE }, { status: 503 })
+      if (smtpConfigured) {
+        // SMTP configured: send verification email and require verification
+        try {
+          await sendVerificationEmail(email, username, token)
+        } catch (error) {
+          await prisma.user.delete({ where: { id: createdUser.id } }).catch(() => undefined)
+          return NextResponse.json({ error: MESSAGES.ERROR_GENERAL }, { status: 500 })
         }
-
-        return NextResponse.json({ error: MESSAGES.ERROR_GENERAL }, { status: 500 })
+      } else {
+        // SMTP not configured: auto-verify the account
+        await prisma.user.update({
+          where: { email },
+          data: { emailVerified: true, emailVerificationToken: null },
+        })
+        requiresEmailVerification = false
+        successMessage = MESSAGES.ACCOUNT_CREATED
       }
     }
 
-    // Auto-login after signup (development only, skip if prod)
     if (process.env.NODE_ENV !== 'production') {
-      // Fetch the user (should be verified now)
       const user = await prisma.user.findUnique({
         where: { email },
         select: { id: true, username: true, displayName: true, accountName: true, personalCode: true },
       })
+
       if (user) {
         const jwt = require('jsonwebtoken')
         const { AUTH_COOKIE_NAME, AUTH_TOKEN_MAX_AGE_SECONDS } = require('@/lib/constants')
@@ -174,9 +186,11 @@ export async function POST(request: NextRequest) {
         const token = jwt.sign(payload, jwtSecret, { expiresIn: AUTH_TOKEN_MAX_AGE_SECONDS })
         const response = NextResponse.json(
           {
-            message: 'Now, verify your email.',
+            message: successMessage,
             pin: NEW_MEMBER_PIN,
             username: user.username,
+            accountName: user.accountName,
+            requiresEmailVerification,
             user: {
               id: user.id,
               username: user.username,
@@ -187,6 +201,7 @@ export async function POST(request: NextRequest) {
           },
           { status: 200 }
         )
+
         response.cookies.set({
           name: AUTH_COOKIE_NAME,
           value: token,
@@ -196,15 +211,18 @@ export async function POST(request: NextRequest) {
           path: '/',
           maxAge: AUTH_TOKEN_MAX_AGE_SECONDS,
         })
+
         return response
       }
     }
+
     return NextResponse.json(
       {
-        message: 'Now, verify your email.',
+        message: successMessage,
         pin: NEW_MEMBER_PIN,
         username,
         accountName: createdUser.accountName,
+        requiresEmailVerification,
       },
       { status: 200 }
     )

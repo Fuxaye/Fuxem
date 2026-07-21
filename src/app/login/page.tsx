@@ -5,6 +5,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 
+import { HelpPopover } from '@/components/ui/help-popover'
+import LegalLinks from '@/app/_components/legal-links'
 import { MESSAGES, ROUTES } from '@/lib/constants'
 
 const CP = "Copperplate, 'Copperplate Gothic Light', fantasy"
@@ -62,6 +64,11 @@ function LoginContent() {
         setStage('credentials')
         setStatus('idle')
         setError('')
+        return
+      }
+
+      if (data.requiresPsk || code === '3333') {
+        router.push(data.returnTo || `${ROUTES.PSK}?returnTo=${encodeURIComponent(returnTo)}`)
         return
       }
 
@@ -149,6 +156,14 @@ function LoginContent() {
           >
             Members Only
           </h1>
+          <div className="mt-3">
+            <Link
+              href={ROUTES.HELP}
+              className="rounded-full border border-sky-300/30 bg-sky-400/12 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-sky-100 transition hover:bg-sky-300/18"
+            >
+              Need help?
+            </Link>
+          </div>
         </div>
 
         {stage === 'pin' ? (
@@ -163,12 +178,18 @@ function LoginContent() {
             )}
 
             <div>
-              <span
-                className="block text-center text-[8px] uppercase tracking-[0.28em] text-yellow-400 mb-2"
-                style={{ fontFamily: CP }}
-              >
-                Access Code
-              </span>
+              <div className="mb-2 flex items-center justify-center gap-2">
+                <span
+                  className="text-center text-[8px] uppercase tracking-[0.28em] text-yellow-400"
+                  style={{ fontFamily: CP }}
+                >
+                  Access Code
+                </span>
+                <HelpPopover
+                  title="Access code"
+                  body="Enter your 4-digit access code first, then continue to credentials when prompted."
+                />
+              </div>
               <input
                 type="password"
                 autoFocus
@@ -206,6 +227,15 @@ function LoginContent() {
                 ← back
               </Link>
             </p>
+            <p className="text-center text-[9px] uppercase tracking-[0.2em] text-stone-600" style={{ fontFamily: CP }}>
+              <Link href={ROUTES.HELP} className="hover:text-stone-400 transition-colors">
+                help center
+              </Link>
+            </p>
+            <LegalLinks
+              className="text-center text-[9px] uppercase tracking-[0.2em] text-stone-600"
+              linkClassName="text-stone-600 transition-colors hover:text-stone-400"
+            />
           </form>
         ) : (
           <form
@@ -279,6 +309,15 @@ function LoginContent() {
                 ← change code
               </button>
             </p>
+            <p className="text-center text-[9px] uppercase tracking-[0.2em] text-stone-600" style={{ fontFamily: CP }}>
+              <Link href={ROUTES.HELP} className="hover:text-stone-400 transition-colors">
+                help center
+              </Link>
+            </p>
+            <LegalLinks
+              className="text-center text-[9px] uppercase tracking-[0.2em] text-stone-600"
+              linkClassName="text-stone-600 transition-colors hover:text-stone-400"
+            />
           </form>
         )}
       </div>

@@ -200,7 +200,6 @@ export const MESSAGES = {
   EMAIL_EXISTS: 'An account with this email already exists',
   NAME_EXISTS: 'That name is already in use',
   EMAIL_SENT: 'Check your email to continue',
-  EMAIL_SERVICE_UNAVAILABLE: 'Signup is temporarily unavailable because email delivery is not configured.',
   INVALID_TOKEN: 'This link is invalid or has already been used',
   TOKEN_EXPIRED: 'This link has expired. Please sign up again.',
   PIN_MISMATCH: 'PIN does not match. Please try again.',
@@ -254,7 +253,7 @@ export const BURNER_TOKEN_MAX_AGE_SECONDS = 60 * 60 * 24 * 7
 export const VIDEO_PLAYBACK_TOKEN_MAX_AGE_SECONDS = 60 * 10
 export const MIN_PASSWORD_LENGTH = 8
 export const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/
-export const MAX_PROFILE_PHOTO_BYTES = 5 * 1024 * 1024
+export const MAX_PROFILE_PHOTO_BYTES = 10 * 1024 * 1024
 
 const parsedMaxMembers = Number.parseInt(process.env.MAX_MEMBER_COUNT || '20', 10)
 export const MAX_MEMBER_COUNT = Number.isFinite(parsedMaxMembers) && parsedMaxMembers > 0
@@ -268,6 +267,16 @@ export const MESSAGING_POLL_INTERVAL_MS = 2500
 
 export const ROUTES = {
   HOME: '/',
+  PUBLIC_PREVIEW: '/public',
+  PUBLIC_MEDIA: '/publicmedia',
+  PUBVID: '/pubvid',
+  HELP: '/help',
+  LEGAL_PRIVACY: '/legal/privacy',
+  LEGAL_TERMS: '/legal/terms',
+  LEGAL_COMMUNITY_GUIDELINES: '/legal/community-guidelines',
+  LEGAL_2257: '/legal/2257',
+  LEGAL_DMCA: '/legal/dmca',
+  CHATROOM: '/chatroom',
   WELCOME: '/welcome',
   ONBOARDING: '/onboarding',
   DEFAULT: '/default',
@@ -283,7 +292,9 @@ export const ROUTES = {
   RESET: '/reset',
   SIGNUP: '/signup',
   PIN_REVEAL: '/pin-reveal',
+  PSK: '/psk',
   PROFILE: '/profile',
+  PROFILE_CAM: '/profile/cam',
   SETTINGS: '/settings',
   SEARCH: '/search',
   CHAT: '/chat',
@@ -292,6 +303,8 @@ export const ROUTES = {
   MESSAGES: '/messages',
   MESSAGESS: '/messagess',
   CAMERA: '/camera',
+  PUBLIC_STREAM: '/publicstream',
+  VIDEO_VIEWER: '/video',
   VIDEOS: '/videos',
   MY_VIDEOS: '/videos/my',
   FRIENDS: '/friends',
@@ -300,18 +313,28 @@ export const ROUTES = {
   COMMUNITY_MEMBERS: '/community/members',
   COMMUNITY_EVENTS: '/community/events',
   COMMUNITY_CLASSIFIEDS: '/community/classifieds',
+  ADMIN: '/admin',
+  ADMIN_TOOLS: '/admin/tools',
+}
+
+export function getUserGroupMainRoute(userId: string) {
+  return `/usergroup/${userId}/main`
+}
+
+export function getUserGroupProfileRoute(userId: string) {
+  return `/usergroup/${userId}/profile`
 }
 
 export const MEMBER_MENU_ITEMS = [
-  { label: 'Dashboard', href: ROUTES.ME },
+  { label: 'Dashboard', href: ROUTES.DASHBOARD },
   { label: 'Community', href: ROUTES.COMMUNITY },
   { label: 'Settings', href: ROUTES.ME_SETTINGS },
   { label: 'Search', href: ROUTES.SEARCH },
   { label: 'Friends', href: ROUTES.FRIENDS },
-  { label: 'Camera', href: ROUTES.CAMERA },
+  { label: 'Camera', href: ROUTES.PROFILE_CAM },
   { label: 'Videos', href: ROUTES.ME_VIDEOS },
   { label: 'Messages', href: ROUTES.ME_MESSAGES },
-  { label: 'Live Chat', href: ROUTES.CHAT },
+  { label: 'Live Chat', href: ROUTES.CHATROOM },
   { label: 'Groups', href: ROUTES.GROUPS },
   { label: 'Profile', href: ROUTES.ME_PROFILE },
 ] as const

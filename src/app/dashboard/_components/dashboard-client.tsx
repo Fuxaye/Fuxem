@@ -3,7 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { motion, type Variants } from 'framer-motion'
-import { Users, Zap, Heart, TrendingUp, MapPin, Compass, Copy, ExternalLink } from 'lucide-react'
+import { Users, Zap, Heart, TrendingUp, MapPin, Compass, Copy, ExternalLink, Thermometer, Droplets, Wind, MoonStar } from 'lucide-react'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -20,6 +20,10 @@ type DashboardViewData = {
     displayName: string
     personalCode: string
   }
+  account: {
+    role: 'SUPREME_ADMIN' | 'ADMIN' | 'MODEL_VERIFIED' | 'MEMBER' | 'BURNER'
+    isModelVerified: boolean
+  }
   profile: {
     age: number | null
     location: string
@@ -35,11 +39,55 @@ type DashboardViewData = {
     sexualOrientation: string
     orientationOther: string
   }
+  stats: {
+    profileViews: number
+    connections: number
+    messagesReceived: number
+    engagementPercent: number
+  }
+  modelStats: {
+    totalVideos: number
+    publicVideos: number
+    unreadMessages: number
+    pendingReports: number
+  }
+  recentActivity: Array<{
+    id: string
+    action: string
+    time: string
+  }>
 }
 
 type DashboardClientProps = {
   initialData: DashboardViewData
 }
+
+type DashboardLivePayload = {
+  stats: DashboardViewData['stats']
+  modelStats: DashboardViewData['modelStats']
+  recentActivity: DashboardViewData['recentActivity']
+  generatedAt: string
+}
+
+type WeatherWidgetData = {
+  locationLabel: string
+  temperatureC: number
+  temperatureF: number
+  feelsLikeC: number
+  humidity: number
+  windKph: number
+  weatherCode: number
+  weatherLabel: string
+  moonPhase: number | null
+  moonPhaseLabel: string
+  sunrise: string | null
+  sunset: string | null
+}
+
+type WeatherWidgetState =
+  | { status: 'loading' }
+  | { status: 'ready'; data: WeatherWidgetData }
+  | { status: 'error'; message: string }
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -78,17 +126,68 @@ function getDefaultArea(profile: DashboardViewData['profile']) {
   return 'Downtown'
 }
 
+function getWeatherCodeLabel(code: number): string {
+  if (code === 0) return 'Clear sky'
+  if (code === 1 || code === 2) return 'Partly cloudy'
+  if (code === 3) return 'Overcast'
+  if (code === 45 || code === 48) return 'Foggy'
+  if (code === 51 || code === 53 || code === 55) return 'Drizzle'
+  if (code === 61 || code === 63 || code === 65) return 'Rain'
+  if (code === 66 || code === 67) return 'Freezing rain'
+  if (code === 71 || code === 73 || code === 75 || code === 77) return 'Snow'
+  if (code === 80 || code === 81 || code === 82) return 'Rain showers'
+  if (code === 85 || code === 86) return 'Snow showers'
+  if (code === 95 || code === 96 || code === 99) return 'Thunderstorm'
+  return 'Variable weather'
+}
+
+function getMoonPhaseLabel(phase: number | null): string {
+  if (phase === null || Number.isNaN(phase)) return 'Unknown'
+  if (phase < 0.03 || phase > 0.97) return 'New Moon'
+  if (phase < 0.22) return 'Waxing Crescent'
+  if (phase < 0.28) return 'First Quarter'
+  if (phase < 0.47) return 'Waxing Gibbous'
+  if (phase < 0.53) return 'Full Moon'
+  if (phase < 0.72) return 'Waning Gibbous'
+  if (phase < 0.78) return 'Last Quarter'
+  return 'Waning Crescent'
+}
+
+function formatClock(value: string | null): string {
+  if (!value) return 'Unknown'
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return 'Unknown'
+  return parsed.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+}
+
 
 export default function DashboardClient({ initialData }: DashboardClientProps) {
-  const { user, profile } = initialData
+  const { user, profile, account } = initialData
   const defaultArea = getDefaultArea(profile)
   const [startArea, setStartArea] = React.useState(defaultArea)
   const [destination, setDestination] = React.useState('')
   const [travelMode, setTravelMode] = React.useState<'driving' | 'walking' | 'transit'>('driving')
   const [activeMapQuery, setActiveMapQuery] = React.useState(defaultArea)
   const [copied, setCopied] = React.useState(false)
+  const [weatherWidget, setWeatherWidget] = React.useState<WeatherWidgetState>({ status: 'loading' })
+  const [liveData, setLiveData] = React.useState<DashboardLivePayload>({
+    stats: initialData.stats,
+    modelStats: initialData.modelStats,
+    recentActivity: initialData.recentActivity,
+    generatedAt: new Date().toISOString(),
+  })
+  const [liveStatus, setLiveStatus] = React.useState<'idle' | 'syncing' | 'error'>('idle')
 
   const quickDestinations = ['Coffee shop', 'Cocktail bar', 'Lounge', 'Dinner spot', 'Hotel lobby']
+
+  const lastUpdatedLabel = React.useMemo(() => {
+    const parsed = new Date(liveData.generatedAt)
+    if (Number.isNaN(parsed.getTime())) {
+      return 'just now'
+    }
+
+    return parsed.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+  }, [liveData.generatedAt])
 
   const mapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(activeMapQuery)}&output=embed`
   const routeUrl = destination.trim()
@@ -118,35 +217,218 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
     setActiveMapQuery(startArea)
   }
 
+  React.useEffect(() => {
+    if (account.role === 'BURNER') {
+      return
+    }
+
+    let cancelled = false
+
+    async function syncLiveData() {
+      setLiveStatus('syncing')
+
+      try {
+        const response = await fetch('/api/dashboard/live', {
+          method: 'GET',
+          cache: 'no-store',
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to refresh live dashboard')
+        }
+
+        const payload = await response.json() as DashboardLivePayload
+
+        if (!cancelled) {
+          setLiveData(payload)
+          setLiveStatus('idle')
+        }
+      } catch {
+        if (!cancelled) {
+          setLiveStatus('error')
+        }
+      }
+    }
+
+    void syncLiveData()
+    const intervalId = window.setInterval(() => {
+      void syncLiveData()
+    }, 30000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+    }
+  }, [account.role])
+
+  const isStaff = account.role === 'ADMIN' || account.role === 'SUPREME_ADMIN'
+
   const statCards = [
     {
-      title: 'Profile Views',
-      value: '2,845',
+      title: 'Video Views',
+      value: liveData.stats.profileViews.toLocaleString(),
+      detail: 'Total plays across your videos',
       icon: TrendingUp,
-      gradient: 'from-blue-500 to-blue-600',
+      gradient: 'from-cyan-400 via-sky-500 to-blue-600',
     },
     {
       title: 'Connections',
-      value: '128',
+      value: liveData.stats.connections.toLocaleString(),
+      detail: 'Accepted connections',
       icon: Users,
-      gradient: 'from-purple-500 to-purple-600',
+      gradient: 'from-emerald-400 via-teal-500 to-cyan-600',
+      href: ROUTES.FRIENDS,
     },
     {
-      title: 'Likes Received',
-      value: '342',
+      title: 'Messages Received',
+      value: liveData.stats.messagesReceived.toLocaleString(),
+      detail: 'Received in the last 30 days',
       icon: Heart,
-      gradient: 'from-pink-500 to-pink-600',
+      gradient: 'from-orange-400 via-rose-500 to-pink-600',
+      href: ROUTES.MESSAGES,
     },
     {
       title: 'Engagement',
-      value: '89%',
+      value: `${liveData.stats.engagementPercent}%`,
+      detail: 'Read rate on received messages',
       icon: Zap,
-      gradient: 'from-yellow-500 to-yellow-600',
+      gradient: 'from-fuchsia-400 via-violet-500 to-indigo-600',
     },
   ]
 
+  const modelCards = [
+    {
+      title: 'Videos Uploaded',
+      value: liveData.modelStats.totalVideos.toLocaleString(),
+      detail: 'All uploaded clips',
+      href: ROUTES.MY_VIDEOS,
+    },
+    {
+      title: 'Public Videos',
+      value: liveData.modelStats.publicVideos.toLocaleString(),
+      detail: 'Visible to members',
+      href: ROUTES.MY_VIDEOS,
+    },
+    {
+      title: 'Unread Messages',
+      value: liveData.modelStats.unreadMessages.toLocaleString(),
+      detail: 'Need your response',
+      href: ROUTES.MESSAGES,
+    },
+    {
+      title: 'Pending Reports',
+      value: liveData.modelStats.pendingReports.toLocaleString(),
+      detail: 'Safety queue items',
+      href: isStaff ? ROUTES.ADMIN : undefined,
+    },
+  ].filter((card) => card.title !== 'Pending Reports' || isStaff)
+
+  const toolDirectory = [
+    { label: 'Dashboard', href: ROUTES.DASHBOARD, tone: 'border-sky-300/30 bg-sky-400/10 text-sky-100' },
+    { label: 'Profile', href: ROUTES.ME_PROFILE, tone: 'border-violet-300/30 bg-violet-400/10 text-violet-100' },
+    { label: 'Messages', href: ROUTES.MESSAGES, tone: 'border-amber-300/30 bg-amber-300/10 text-amber-100' },
+    { label: 'Friends', href: ROUTES.FRIENDS, tone: 'border-emerald-300/30 bg-emerald-400/10 text-emerald-100' },
+    { label: 'Member Search', href: ROUTES.SEARCH, tone: 'border-cyan-300/30 bg-cyan-400/10 text-cyan-100' },
+    { label: 'Camera', href: ROUTES.CAMERA, tone: 'border-fuchsia-300/30 bg-fuchsia-400/10 text-fuchsia-100' },
+    { label: 'Videos', href: ROUTES.VIDEOS, tone: 'border-rose-300/30 bg-rose-400/10 text-rose-100' },
+    { label: 'Settings', href: ROUTES.SETTINGS, tone: 'border-indigo-300/30 bg-indigo-400/10 text-indigo-100' },
+    { label: 'Community', href: ROUTES.COMMUNITY, tone: 'border-teal-300/30 bg-teal-400/10 text-teal-100' },
+    { label: 'Help', href: ROUTES.HELP, tone: 'border-stone-300/30 bg-stone-400/10 text-stone-100' },
+  ]
+
+  React.useEffect(() => {
+    let cancelled = false
+
+    async function loadWeatherWidget() {
+      setWeatherWidget({ status: 'loading' })
+
+      try {
+        const areaQuery = [profile.city, profile.state, profile.country].filter(Boolean).join(', ') || profile.location || defaultArea
+        const geocodeUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(areaQuery)}&count=1&language=en&format=json`
+        const geocodeResponse = await fetch(geocodeUrl)
+        if (!geocodeResponse.ok) {
+          throw new Error('Could not resolve location')
+        }
+
+        const geocode = await geocodeResponse.json() as {
+          results?: Array<{ latitude: number; longitude: number; name: string; admin1?: string; country?: string }>
+        }
+        const match = geocode.results?.[0]
+        if (!match) {
+          throw new Error('No weather station found for your area')
+        }
+
+        const locationLabel = [match.name, match.admin1, match.country].filter(Boolean).join(', ')
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${match.latitude}&longitude=${match.longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=moon_phase,sunrise,sunset&forecast_days=1&timezone=auto`
+        const weatherResponse = await fetch(weatherUrl)
+        if (!weatherResponse.ok) {
+          throw new Error('Could not fetch weather data')
+        }
+
+        const payload = await weatherResponse.json() as {
+          current?: {
+            temperature_2m?: number
+            relative_humidity_2m?: number
+            apparent_temperature?: number
+            weather_code?: number
+            wind_speed_10m?: number
+          }
+          daily?: {
+            moon_phase?: number[]
+            sunrise?: string[]
+            sunset?: string[]
+          }
+        }
+
+        const temperatureC = Math.round(payload.current?.temperature_2m ?? 0)
+        const feelsLikeC = Math.round(payload.current?.apparent_temperature ?? temperatureC)
+        const humidity = Math.round(payload.current?.relative_humidity_2m ?? 0)
+        const windKph = Math.round(payload.current?.wind_speed_10m ?? 0)
+        const weatherCode = payload.current?.weather_code ?? 0
+        const moonPhase = payload.daily?.moon_phase?.[0] ?? null
+
+        const data: WeatherWidgetData = {
+          locationLabel,
+          temperatureC,
+          temperatureF: Math.round((temperatureC * 9) / 5 + 32),
+          feelsLikeC,
+          humidity,
+          windKph,
+          weatherCode,
+          weatherLabel: getWeatherCodeLabel(weatherCode),
+          moonPhase,
+          moonPhaseLabel: getMoonPhaseLabel(moonPhase),
+          sunrise: payload.daily?.sunrise?.[0] ?? null,
+          sunset: payload.daily?.sunset?.[0] ?? null,
+        }
+
+        if (!cancelled) {
+          setWeatherWidget({ status: 'ready', data })
+        }
+      } catch {
+        if (!cancelled) {
+          setWeatherWidget({
+            status: 'error',
+            message: 'Weather and moon data are unavailable right now.',
+          })
+        }
+      }
+    }
+
+    void loadWeatherWidget()
+
+    return () => {
+      cancelled = true
+    }
+  }, [defaultArea, profile.city, profile.country, profile.location, profile.state])
+
   return (
-    <div className="min-h-screen p-4 md:p-8">
+    <div className="relative min-h-screen overflow-hidden p-4 md:p-8">
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute -left-20 top-8 h-72 w-72 rounded-full bg-cyan-500/15 blur-3xl" />
+        <div className="absolute right-0 top-24 h-96 w-96 rounded-full bg-fuchsia-500/10 blur-3xl" />
+        <div className="absolute bottom-10 left-1/3 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl" />
+      </div>
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -155,30 +437,40 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
       >
         {/* Top Section */}
         <motion.div variants={itemVariants}>
-          <div className="mb-8 rounded-3xl border border-border-subtle/60 bg-gradient-to-br from-bg-surface/60 to-bg-surface/20 p-5 backdrop-blur-md md:p-6">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div className="space-y-2">
-                <p className="text-xs uppercase tracking-[0.22em] text-text-muted">Member Dashboard</p>
-                <h1 className="text-2xl font-semibold text-text-primary md:text-3xl">Your Activity Overview</h1>
-                <p className="text-sm text-text-muted md:text-base">Here's what's happening with your profile.</p>
+          <div className="mb-6 rounded-2xl border border-cyan-200/20 bg-gradient-to-br from-slate-900/80 via-slate-900/60 to-cyan-950/50 p-4 shadow-[0_16px_60px_-30px_rgba(56,189,248,0.45)] backdrop-blur-md md:p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3 md:items-end">
+              <div className="max-w-2xl space-y-1.5">
+                <p className="text-[11px] uppercase tracking-[0.3em] text-cyan-200/70">Verified Model Dashboard</p>
+                <h1 className="text-2xl font-semibold text-white md:text-3xl">Your Command Center</h1>
+                <p className="text-sm text-slate-200/75">Views, profile completion, and social activity at a glance.</p>
+                <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                  <Badge className="border border-cyan-300/30 bg-cyan-500/15 text-cyan-100">Live API</Badge>
+                  <Badge className="border border-white/15 bg-white/5 text-slate-200">Updated {lastUpdatedLabel}</Badge>
+                  {liveStatus === 'syncing' && (
+                    <Badge className="border border-amber-300/30 bg-amber-400/10 text-amber-100">Syncing</Badge>
+                  )}
+                  {liveStatus === 'error' && (
+                    <Badge className="border border-rose-300/30 bg-rose-500/15 text-rose-100">Sync failed</Badge>
+                  )}
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-2">
                 <Link
                   href={ROUTES.SEARCH}
-                  className="rounded-xl border border-sky-300/30 bg-sky-400/10 px-3 py-2 text-xs font-semibold text-sky-100 transition hover:bg-sky-300/15"
+                  className="rounded-xl border border-sky-300/30 bg-sky-400/10 px-3 py-2 text-[11px] font-semibold text-sky-100 transition hover:bg-sky-300/15"
                 >
                   Discover Members
                 </Link>
                 <Link
                   href={ROUTES.FRIENDS}
-                  className="rounded-xl border border-emerald-300/30 bg-emerald-400/10 px-3 py-2 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-300/15"
+                  className="rounded-xl border border-emerald-300/30 bg-emerald-400/10 px-3 py-2 text-[11px] font-semibold text-emerald-100 transition hover:bg-emerald-300/15"
                 >
                   View Friends
                 </Link>
                 <Link
                   href={ROUTES.MESSAGES}
-                  className="rounded-xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:bg-amber-200/15"
+                  className="rounded-xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-[11px] font-semibold text-amber-100 transition hover:bg-amber-200/15"
                 >
                   Open Messages
                 </Link>
@@ -191,29 +483,97 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
         <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {statCards.map((stat, index) => {
             const Icon = stat.icon
+            const cardContent = (
+              <Card className="bg-gradient-to-br from-bg-surface/50 to-bg-surface/20 border-border-subtle/50 transition-colors hover:border-primary/30">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-text-muted">
+                    {stat.title}
+                  </CardTitle>
+                  <div className={`p-2.5 rounded-lg bg-gradient-to-br ${stat.gradient} text-white shadow-lg`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-text-primary">{stat.value}</div>
+                  <p className="mt-2 text-xs text-text-muted">{stat.detail}</p>
+                </CardContent>
+              </Card>
+            )
+
             return (
               <motion.div
                 key={index}
-                whileHover={{ y: -5, boxShadow: '0 20px 25px -5 rgba(0, 0, 0, 0.3)' }}
+                whileHover={stat.href ? { y: -5, boxShadow: '0 20px 25px -5 rgba(0, 0, 0, 0.3)' } : undefined}
                 transition={{ duration: 0.2 }}
               >
-                <Card className="bg-gradient-to-br from-bg-surface/50 to-bg-surface/20 border-border-subtle/50 hover:border-primary/30 transition-colors">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-text-muted">
-                      {stat.title}
-                    </CardTitle>
-                    <div className={`p-2.5 rounded-lg bg-gradient-to-br ${stat.gradient} text-white shadow-lg`}>
-                      <Icon className="h-5 w-5" />
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-text-primary">{stat.value}</div>
-                    <p className="text-xs text-text-muted mt-2">+12.5% from last month</p>
-                  </CardContent>
-                </Card>
+                {stat.href ? (
+                  <Link href={stat.href} className="block cursor-pointer">
+                    {cardContent}
+                  </Link>
+                ) : (
+                  cardContent
+                )}
               </motion.div>
             )
           })}
+        </motion.div>
+
+        {/* Model + Moderation Grid */}
+        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {modelCards.map((stat) => {
+            const card = (
+              <Card className="border-border-subtle/50 bg-black/20 backdrop-blur transition-colors hover:border-primary/30">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-text-muted">{stat.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-semibold text-text-primary">{stat.value}</p>
+                  <p className="mt-1 text-xs text-text-muted">{stat.detail}</p>
+                </CardContent>
+              </Card>
+            )
+
+            if (!stat.href) {
+              return (
+                <div key={stat.title} className="rounded-xl">
+                  {card}
+                </div>
+              )
+            }
+
+            return (
+              <Link
+                key={stat.title}
+                href={stat.href}
+                className="block cursor-pointer rounded-xl transition-transform hover:-translate-y-1"
+              >
+                {card}
+              </Link>
+            )
+          })}
+        </motion.div>
+
+        {/* Tool Directory */}
+        <motion.div variants={itemVariants}>
+          <Card className="bg-gradient-to-br from-bg-surface/50 to-bg-surface/20 border-border-subtle/50">
+            <CardHeader>
+              <CardTitle>Tool Directory</CardTitle>
+              <CardDescription>Find every core member tool from one place</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {toolDirectory.map((tool) => (
+                  <Link
+                    key={tool.href}
+                    href={tool.href}
+                    className={`rounded-xl border px-3 py-2 text-xs font-semibold transition hover:opacity-90 ${tool.tone}`}
+                  >
+                    {tool.label}
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
 
         {/* Profile Overview */}
@@ -339,14 +699,9 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {[
-                  { action: 'Profile updated', time: '2 hours ago' },
-                  { action: 'New connection established', time: '5 hours ago' },
-                  { action: 'Profile viewed by 12 members', time: '1 day ago' },
-                  { action: 'Received 3 new messages', time: '2 days ago' },
-                ].map((activity, idx) => (
+                {liveData.recentActivity.map((activity, idx) => (
                   <motion.div
-                    key={idx}
+                    key={activity.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.05 }}
@@ -357,6 +712,78 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                   </motion.div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Moon Phase + Weather */}
+        <motion.div variants={itemVariants}>
+          <Card className="bg-gradient-to-br from-bg-surface/50 to-bg-surface/20 border-border-subtle/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MoonStar className="h-5 w-5 text-champagne" />
+                Moon and Local Weather
+              </CardTitle>
+              <CardDescription>Live snapshot for your area</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {weatherWidget.status === 'loading' && (
+                <div className="rounded-xl border border-border-subtle/40 bg-black/10 p-4 text-sm text-text-muted">
+                  Loading weather and moon phase...
+                </div>
+              )}
+
+              {weatherWidget.status === 'error' && (
+                <div className="rounded-xl border border-amber-300/30 bg-amber-400/10 p-4 text-sm text-amber-100">
+                  {weatherWidget.message}
+                </div>
+              )}
+
+              {weatherWidget.status === 'ready' && (
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-border-subtle/40 bg-black/10 p-4">
+                    <p className="text-xs uppercase tracking-[0.2em] text-text-muted">Location</p>
+                    <p className="mt-1 text-sm text-text-primary">{weatherWidget.data.locationLabel}</p>
+                    <p className="mt-2 text-xs text-text-muted">{weatherWidget.data.weatherLabel}</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="rounded-xl border border-border-subtle/40 bg-black/10 p-4">
+                      <p className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-text-muted">
+                        <Thermometer className="h-4 w-4" /> Temp
+                      </p>
+                      <p className="mt-2 text-xl font-semibold text-text-primary">
+                        {weatherWidget.data.temperatureC}C / {weatherWidget.data.temperatureF}F
+                      </p>
+                      <p className="mt-1 text-xs text-text-muted">Feels like {weatherWidget.data.feelsLikeC}C</p>
+                    </div>
+
+                    <div className="rounded-xl border border-border-subtle/40 bg-black/10 p-4">
+                      <p className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-text-muted">
+                        <Droplets className="h-4 w-4" /> Humidity
+                      </p>
+                      <p className="mt-2 text-xl font-semibold text-text-primary">{weatherWidget.data.humidity}%</p>
+                      <p className="mt-1 text-xs text-text-muted">Weather code {weatherWidget.data.weatherCode}</p>
+                    </div>
+
+                    <div className="rounded-xl border border-border-subtle/40 bg-black/10 p-4">
+                      <p className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-text-muted">
+                        <Wind className="h-4 w-4" /> Wind
+                      </p>
+                      <p className="mt-2 text-xl font-semibold text-text-primary">{weatherWidget.data.windKph} km/h</p>
+                      <p className="mt-1 text-xs text-text-muted">Sunrise {formatClock(weatherWidget.data.sunrise)}</p>
+                    </div>
+
+                    <div className="rounded-xl border border-border-subtle/40 bg-black/10 p-4">
+                      <p className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-text-muted">
+                        <MoonStar className="h-4 w-4" /> Moon
+                      </p>
+                      <p className="mt-2 text-xl font-semibold text-text-primary">{weatherWidget.data.moonPhaseLabel}</p>
+                      <p className="mt-1 text-xs text-text-muted">Sunset {formatClock(weatherWidget.data.sunset)}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>

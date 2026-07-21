@@ -2,8 +2,23 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { AUTH_COOKIE_NAME, ROUTES, SESSION_MODE_COOKIE_NAME } from '@/lib/constants'
 
-// Only onboarding, welcome, login, signup, and home are public
-const PUBLIC_PATHS = ['/', '/welcome', '/onboarding', '/log-in', '/login', '/forgot', '/reset', '/signup', '/pin-reveal', '/default'];
+// Public website and compliance surfaces
+const PUBLIC_PATHS = [
+  '/',
+  '/welcome',
+  '/public',
+  '/publicmedia',
+  '/legal',
+  '/video',
+  '/onboarding',
+  '/log-in',
+  '/login',
+  '/forgot',
+  '/reset',
+  '/signup',
+  '/pin-reveal',
+  '/default',
+]
 const DEV_BOGUS_POST_PATHS = new Set([
   '/action',
   '/submit',
@@ -95,6 +110,11 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith('/api/auth/')) {
+    return NextResponse.next()
+  }
+
+  // Keep video endpoints publicly reachable; handlers still enforce role/auth as needed.
+  if (pathname.startsWith('/api/videos')) {
     return NextResponse.next()
   }
 

@@ -81,7 +81,12 @@ export async function POST(request: NextRequest) {
     const city = body.city?.trim()
     const state = body.state?.trim() || null
     const country = body.country?.trim() || null
-    const gender = body.gender?.trim()
+    const selfDescription = body.selfDescription?.trim() || null
+    const pronouns = body.pronouns?.trim() || null
+    const roles = Array.isArray(body.roles)
+      ? body.roles.filter((value: unknown) => typeof value === 'string').map((value: string) => value.trim()).filter(Boolean)
+      : []
+    const gender = body.gender?.trim() || null
     const genderOther = body.genderOther?.trim() || null
     const sexualOrientation = body.sexualOrientation?.trim()
     const orientationOther = body.orientationOther?.trim() || null
@@ -144,14 +149,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!city || !gender || !sexualOrientation || lookingFor.length === 0) {
-      return NextResponse.json(
-        { error: MESSAGES.FIELD_REQUIRED },
-        { status: 400 }
-      )
-    }
-
-    if (gender === 'Other' && !genderOther) {
+    if (!city || !pronouns || !sexualOrientation || lookingFor.length === 0) {
       return NextResponse.json(
         { error: MESSAGES.FIELD_REQUIRED },
         { status: 400 }
@@ -267,6 +265,9 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         age: getAge(dateOfBirth),
         dateOfBirth,
+        selfDescription,
+        pronouns,
+        roles,
         gender,
         genderOther,
         sexualOrientation,

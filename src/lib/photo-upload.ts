@@ -1,17 +1,38 @@
-import { supabase } from '@/lib/supabase'
+async function uploadMemberMedia(kind: 'photo' | 'video', file: File): Promise<string> {
+  const formData = new FormData()
+  formData.append('kind', kind)
+  formData.append('file', file)
 
-export async function uploadProfilePhotos(userId: string, files: FileList): Promise<string[]> {
-  const uploadedUrls: string[] = []
-  for (const file of Array.from(files)) {
-    const ext = file.name.split('.').pop() || 'jpg'
-    const filePath = `profile-photos/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-    const { error } = await supabase.storage.from('profile-photos').upload(filePath, file, {
-      cacheControl: '3600',
-      upsert: false,
-    })
-    if (error) throw error
-    const { data } = supabase.storage.from('profile-photos').getPublicUrl(filePath)
-    if (data?.publicUrl) uploadedUrls.push(data.publicUrl)
+  const response = await fetch('/api/member/media/upload', {
+    method: 'POST',
+    body: formData,
+  })
+
+  const payload = (await response.json().catch(() => null)) as { url?: string; error?: string } | null
+
+  if (!response.ok || !payload?.url) {
+    throw new Error(payload?.error || `${kind} upload failed.`)
   }
+
+  return payload.url
+}
+
+export async function uploadProfilePhotos(_userId: string, files: FileList): Promise<string[]> {
+  const uploadedUrls: string[] = []
+
+  for (const file of Array.from(files)) {
+    uploadedUrls.push(await uploadMemberMedia('photo', file))
+  }
+
+  return uploadedUrls
+}
+
+export async function uploadProfileVideos(_userId: string, files: FileList): Promise<string[]> {
+  const uploadedUrls: string[] = []
+
+  for (const file of Array.from(files)) {
+    uploadedUrls.push(await uploadMemberMedia('video', file))
+  }
+
   return uploadedUrls
 }

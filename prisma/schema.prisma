@@ -152,6 +152,9 @@ model Profile {
   genderOther     String?
   sexualOrientation String?
   orientationOther String?
+  selfDescription String?  // How user describes themselves (free-text, non-prescriptive)
+  pronouns        String?  // e.g., "she/her", "he/him", "they/them", etc.
+  roles           String[] @default([]) // BDSM/dynamic roles: Dominant, Submissive, Slut, etc.
   city            String?
   state           String?
   country         String?
@@ -202,8 +205,23 @@ model ChatRoom {
   id          String   @id @default(cuid())
   name        String
   type        String   // private, group, public
+  messages    ChatRoomMessage[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model ChatRoomMessage {
+  id         String   @id @default(cuid())
+  roomId     String
+  senderId   String
+  senderName String
+  body       String
+  createdAt  DateTime @default(now())
+
+  room       ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt])
+  @@index([senderId])
 }
 
 model Classified {

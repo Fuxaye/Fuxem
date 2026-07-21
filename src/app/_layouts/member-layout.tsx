@@ -3,20 +3,23 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Menu, X } from 'lucide-react'
+import { ChevronDown, Menu, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-import { MEMBER_MENU_ITEMS } from '@/lib/constants'
+import { MEMBER_MENU_ITEMS, ROUTES } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
 interface MemberLayoutProps {
   children: React.ReactNode
   initialUser?: {
+    id?: string
     username: string
     firstName: string
     displayName: string
+    accountCategoryLabel?: string
     avatarUrl?: string
+    profileHref?: string
   }
   isBurner?: boolean
 }
@@ -45,6 +48,12 @@ const iconMap: { [key: string]: React.ReactNode } = {
     </svg>
   ),
   Profile: (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  ),
+  'My Profile': (
     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
       <circle cx="12" cy="7" r="4" />
@@ -93,12 +102,86 @@ function getInitials(name: string) {
     .toUpperCase()
 }
 
-function SidebarNav() {
+function getMemberMenuItems(profileHref?: string) {
+  return MEMBER_MENU_ITEMS.map((item) => {
+    if (item.label === 'Dashboard' && profileHref) {
+      return { ...item, label: 'My Profile', href: profileHref }
+    }
+
+    return item
+  })
+}
+
+function SidebarNav({ profileHref }: { profileHref?: string }) {
   const pathname = usePathname()
+  const menuItems = getMemberMenuItems(profileHref)
+  const isVideosRoute =
+    pathname === ROUTES.PUBLIC_STREAM ||
+    pathname === ROUTES.VIDEOS ||
+    pathname === ROUTES.MY_VIDEOS ||
+    pathname === ROUTES.ME_VIDEOS
+  const [isVideosOpen, setIsVideosOpen] = useState(isVideosRoute)
+
+  React.useEffect(() => {
+    if (isVideosRoute) {
+      setIsVideosOpen(true)
+    }
+  }, [isVideosRoute])
 
   return (
-    <nav className="space-y-2">
-      {MEMBER_MENU_ITEMS.map((item) => {
+    <div className="space-y-6">
+      <nav className="space-y-2">
+        {menuItems.map((item) => {
+        if (item.label === 'Videos') {
+          return (
+            <div key="videos-dropdown" className="space-y-1">
+              <button
+                type="button"
+                onClick={() => setIsVideosOpen((current) => !current)}
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left transition-all duration-200',
+                  isVideosRoute
+                    ? 'border border-primary/30 bg-primary/20 text-primary'
+                    : 'text-text-muted hover:bg-bg-surface/50'
+                )}
+              >
+                {iconMap.Videos}
+                <span className="text-sm font-medium">Videos</span>
+                <ChevronDown className={cn('ml-auto h-4 w-4 transition-transform', isVideosOpen ? 'rotate-180' : '')} />
+              </button>
+
+              {isVideosOpen && (
+                <div className="space-y-1 pl-5">
+                  <Link href={ROUTES.PUBLIC_STREAM}>
+                    <div
+                      className={cn(
+                        'rounded-lg px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] transition-all',
+                        pathname === ROUTES.PUBLIC_STREAM || pathname === ROUTES.VIDEOS
+                          ? 'bg-primary/20 text-primary'
+                          : 'text-text-muted hover:bg-bg-surface/40'
+                      )}
+                    >
+                      Watch Videos
+                    </div>
+                  </Link>
+                  <Link href={ROUTES.MY_VIDEOS}>
+                    <div
+                      className={cn(
+                        'rounded-lg px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] transition-all',
+                        pathname === ROUTES.MY_VIDEOS || pathname === ROUTES.ME_VIDEOS
+                          ? 'bg-primary/20 text-primary'
+                          : 'text-text-muted hover:bg-bg-surface/40'
+                      )}
+                    >
+                      Post Videos
+                    </div>
+                  </Link>
+                </div>
+              )}
+            </div>
+          )
+        }
+
         const isActive = pathname === item.href
         return (
           <Link key={item.href} href={item.href}>
@@ -117,8 +200,30 @@ function SidebarNav() {
             </motion.div>
           </Link>
         )
-      })}
-    </nav>
+        })}
+      </nav>
+
+      <div className="rounded-xl border border-border-subtle bg-bg-surface/30 p-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">Legal</p>
+        <div className="mt-3 space-y-1">
+          <Link href={ROUTES.LEGAL_TERMS}>
+            <div className="rounded-lg px-3 py-2 text-xs font-medium text-text-muted transition-all hover:bg-bg-surface/50 hover:text-text-primary">
+              Terms of Service
+            </div>
+          </Link>
+          <Link href={ROUTES.LEGAL_PRIVACY}>
+            <div className="rounded-lg px-3 py-2 text-xs font-medium text-text-muted transition-all hover:bg-bg-surface/50 hover:text-text-primary">
+              Privacy Policy
+            </div>
+          </Link>
+          <Link href={ROUTES.LEGAL_COMMUNITY_GUIDELINES}>
+            <div className="rounded-lg px-3 py-2 text-xs font-medium text-text-muted transition-all hover:bg-bg-surface/50 hover:text-text-primary">
+              Community Guidelines
+            </div>
+          </Link>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -132,6 +237,15 @@ export default function MemberLayout({ children, initialUser, isBurner }: Member
   React.useEffect(() => {
     setSidebarOpen(false)
   }, [pathname])
+
+  const menuItems = getMemberMenuItems(initialUser?.profileHref)
+  const currentPageTitle = pathname.startsWith('/usergroup/') && pathname.endsWith('/main')
+    ? 'Member Home'
+    : pathname.startsWith('/usergroup/') && pathname.endsWith('/profile')
+      ? 'My Profile'
+      : pathname === ROUTES.PUBLIC_STREAM || pathname === ROUTES.VIDEOS || pathname === ROUTES.MY_VIDEOS
+        ? 'Videos'
+      : menuItems.find(item => item.href === pathname)?.label || 'Dashboard'
 
   async function handleSignOut() {
     if (isSigningOut) return
@@ -147,8 +261,6 @@ export default function MemberLayout({ children, initialUser, isBurner }: Member
     router.replace('/welcome')
     router.refresh()
   }
-
-  const currentPageTitle = MEMBER_MENU_ITEMS.find(item => item.href === pathname)?.label || 'Dashboard'
 
   return (
     <div className="min-h-screen relative bg-bg-base dark:bg-bg-base">
@@ -197,7 +309,7 @@ export default function MemberLayout({ children, initialUser, isBurner }: Member
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-2">
-            <SidebarNav />
+            <SidebarNav profileHref={initialUser?.profileHref} />
           </div>
 
           <div className="p-4 border-t border-border-subtle">
@@ -262,7 +374,7 @@ export default function MemberLayout({ children, initialUser, isBurner }: Member
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                    <SidebarNav />
+                    <SidebarNav profileHref={initialUser?.profileHref} />
                   </div>
 
                   <div className="p-4 border-t border-border-subtle">

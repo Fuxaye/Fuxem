@@ -10,6 +10,7 @@ import {
   BURNER_TOKEN_MAX_AGE_SECONDS,
   BURNER_PIN,
   MESSAGES,
+  NEW_MEMBER_PIN,
   PRESHARED_KEY_PIN,
   ROUTES,
   SESSION_MODE_COOKIE_NAME,
@@ -36,6 +37,7 @@ type ParsedLoginInput = {
   code: string
   identifier: string
   secret: string
+  psk: string
   returnTo: string
   requestKind: 'json' | 'form'
 }
@@ -52,6 +54,30 @@ type LoginUser = {
   emailVerified: boolean
 }
 
+type LoginMatchField = 'username' | 'email' | null
+
+const PSK_TEST_VALUE = 'alljackedup'
+const BURNER_MAX_AGE_MS = BURNER_TOKEN_MAX_AGE_SECONDS * 1000
+
+function logCredentialMatch(params: {
+  identifier: string
+  matchedField: LoginMatchField
+  user: Pick<LoginUser, 'id' | 'username' | 'email' | 'status'> | null
+}) {
+  if (process.env.LOGIN_DEBUG !== 'true') {
+    return
+  }
+
+  console.info('credential-login-attempt', {
+    identifier: params.identifier,
+    matchedField: params.matchedField,
+    userId: params.user?.id ?? null,
+    username: params.user?.username ?? null,
+    email: params.user?.email ?? null,
+    status: params.user?.status ?? null,
+  })
+}
+
 async function parseLoginInput(request: NextRequest): Promise<ParsedLoginInput> {
   const contentType = request.headers.get('content-type') || ''
   const requestKind: ParsedLoginInput['requestKind'] = contentType.includes('application/json') ? 'json' : 'form'
@@ -62,6 +88,7 @@ async function parseLoginInput(request: NextRequest): Promise<ParsedLoginInput> 
       code: (body.passcode || body.pin || '').trim(),
       identifier: (body.identifier || body.email || body.username || '').trim().toLowerCase(),
       secret: (body.secret || body.password || '').trim(),
+      psk: (body.psk || '').trim(),
       returnTo: getSafeReturnTo(body.returnTo || null),
       requestKind,
     }
@@ -72,6 +99,7 @@ async function parseLoginInput(request: NextRequest): Promise<ParsedLoginInput> 
     code: String(formData.get('passcode') || '').trim(),
     identifier: String(formData.get('identifier') || formData.get('email') || formData.get('username') || '').trim().toLowerCase(),
     secret: String(formData.get('secret') || formData.get('password') || '').trim(),
+    psk: String(formData.get('psk') || '').trim(),
     returnTo: getSafeReturnTo(String(formData.get('returnTo') || ROUTES.ME)),
     requestKind,
   }
@@ -168,11 +196,11 @@ async function generateUniquePersonalCode(baseCode: string, tx: Prisma.Transacti
   return fallback
 }
 
-async function generateBurnerUsername(tx: Prisma.TransactionClient) {
-  const base = 'defaultuser'
+async function generateNumberedUsername(tx: Prisma.TransactionClient, prefix: string) {
+  const normalizedPrefix = prefix.toLowerCase()
 
-  for (let attempt = 0; attempt < 10_000; attempt += 1) {
-    const candidate = attempt === 0 ? base : `${base}${attempt}`
+  for (let number = 1; number < 10_000; number += 1) {
+    const candidate = `${normalizedPrefix}${number}`
     const existing = await tx.user.findUnique({
       where: { username: candidate },
       select: { id: true },
@@ -183,20 +211,32 @@ async function generateBurnerUsername(tx: Prisma.TransactionClient) {
     }
   }
 
-  return `${base}${Date.now()}`
+  return `${normalizedPrefix}${Date.now()}`
+}
+
+async function cleanupExpiredBurners() {
+  const cutoff = new Date(Date.now() - BURNER_MAX_AGE_MS)
+
+  await prisma.user.deleteMany({
+    where: {
+      role: 'BURNER',
+      createdAt: { lt: cutoff },
+    },
+  })
 }
 
 async function createBurnerUser() {
   return prisma.$transaction(async (tx) => {
     const accountName = await generateNextAccountName(tx)
-    const username = await generateBurnerUsername(tx)
+    const username = await generateNumberedUsername(tx, 'burner')
+    const burnerNumber = username.replace(/^burner/i, '')
     const personalCode = await generateUniquePersonalCode(`BURN${Date.now().toString().slice(-6)}`, tx)
 
     return tx.user.create({
       data: {
         username,
         accountName,
-        displayName: username,
+        displayName: `Burner(${burnerNumber})`,
         personalCode,
         role: 'BURNER',
         onboardingStep: 'completed',
@@ -211,14 +251,15 @@ async function createBurnerUser() {
 async function createPresharedUser() {
   return prisma.$transaction(async (tx) => {
     const accountName = await generateNextAccountName(tx)
-    const username = await generateBurnerUsername(tx)
+    const username = await generateNumberedUsername(tx, 'mod')
+    const modNumber = username.replace(/^mod/i, '')
     const personalCode = await generateUniquePersonalCode(`KEY${Date.now().toString().slice(-6)}`, tx)
 
     return tx.user.create({
       data: {
         username,
         accountName,
-        displayName: username,
+        displayName: `Mod(${modNumber})`,
         personalCode,
         role: 'MEMBER',
         onboardingStep: 'completed',
@@ -232,7 +273,7 @@ async function createPresharedUser() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { code, identifier, secret, returnTo, requestKind } = await parseLoginInput(request)
+    const { code, identifier, secret, psk, returnTo, requestKind } = await parseLoginInput(request)
     const normalizedCode = code.toUpperCase()
 
     const jwtSecret = process.env.JWT_SECRET
@@ -242,6 +283,24 @@ export async function POST(request: NextRequest) {
 
     if (!code && !(identifier && secret)) {
       return buildErrorResponse(request, requestKind, MESSAGES.LOGIN_CREDENTIALS_REQUIRED, 400)
+    }
+
+    await cleanupExpiredBurners()
+
+    // Two-step member login: 5555 gates the credential form before auth.
+    if (normalizedCode === NEW_MEMBER_PIN && !identifier && !secret) {
+      if (requestKind === 'json') {
+        return NextResponse.json(
+          {
+            message: 'Access code accepted. Continue with your credentials.',
+            requiresCredentials: true,
+            returnTo,
+          },
+          { status: 200 }
+        )
+      }
+
+      return NextResponse.redirect(new URL(ROUTES.LOGIN, request.url))
     }
 
     // Burner access: always create a fresh read-only account for this session.
@@ -279,7 +338,27 @@ export async function POST(request: NextRequest) {
       return withSessionCookies(response, token, SESSION_MODE_DEFAULT_MEMBER, BURNER_TOKEN_MAX_AGE_SECONDS)
     }
 
-    if (normalizedCode === PRESHARED_KEY_PIN) {
+    if (normalizedCode === PRESHARED_KEY_PIN || normalizedCode === '333') {
+      if (!psk) {
+        if (requestKind === 'json') {
+          const pskReturnTo = `${ROUTES.PSK}?returnTo=${encodeURIComponent(returnTo)}`
+          return NextResponse.json(
+            {
+              message: 'Access code accepted. Enter PSK to continue.',
+              requiresPsk: true,
+              returnTo: pskReturnTo,
+            },
+            { status: 200 }
+          )
+        }
+
+        return NextResponse.redirect(new URL(ROUTES.PSK, request.url))
+      }
+
+      if (psk !== PSK_TEST_VALUE) {
+        return buildErrorResponse(request, requestKind, MESSAGES.LOGIN_INVALID, 401)
+      }
+
       const presharedUser = await createPresharedUser()
 
       const presharedTokenPayload: AuthTokenPayload = {
@@ -300,7 +379,6 @@ export async function POST(request: NextRequest) {
         {
           message: MESSAGES.LOGIN_SUCCESS,
           sessionMode: SESSION_MODE_MEMBER,
-          promptNametag: true,
           user: {
             id: presharedUser.id,
             username: presharedUser.username,
@@ -322,11 +400,32 @@ export async function POST(request: NextRequest) {
       return buildErrorResponse(request, requestKind, MESSAGES.LOGIN_PASSWORD_REQUIRED, 400)
     }
 
-    const user = await prisma.user.findFirst({
-      where: {
-        OR: [{ username: identifier }, { email: identifier }],
-      },
+    const userByUsername = await prisma.user.findUnique({
+      where: { username: identifier },
       select: loginUserSelect,
+    })
+
+    const userByEmail = userByUsername
+      ? null
+      : await prisma.user.findUnique({
+          where: { email: identifier },
+          select: loginUserSelect,
+        })
+
+    const user = userByUsername ?? userByEmail
+    const matchedField: LoginMatchField = userByUsername ? 'username' : userByEmail ? 'email' : null
+
+    logCredentialMatch({
+      identifier,
+      matchedField,
+      user: user
+        ? {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            status: user.status,
+          }
+        : null,
     })
 
     if (!user || user.status !== 'active') {
@@ -340,6 +439,10 @@ export async function POST(request: NextRequest) {
     const passwordMatches = await bcrypt.compare(secret, user.passwordHash)
     if (!passwordMatches) {
       return buildErrorResponse(request, requestKind, MESSAGES.LOGIN_INVALID, 401)
+    }
+
+    if (!user.emailVerified) {
+      return buildErrorResponse(request, requestKind, MESSAGES.EMAIL_VERIFICATION_REQUIRED, 403)
     }
 
     const token = jwt.sign(

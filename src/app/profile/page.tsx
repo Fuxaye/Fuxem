@@ -3,16 +3,14 @@
 export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 import MemberLayout from '@/app/_layouts/member-layout'
-import nextDynamic from 'next/dynamic'
-
-// Dynamically import ProfilePreview, ProfileGallery, and PhotoUpload to avoid SSR issues
-const ProfilePreview = nextDynamic(() => import('./ProfilePreview'), { ssr: false })
-const ProfileGallery = nextDynamic(() => import('./ProfileGallery'), { ssr: false })
-const PhotoCropUpload = nextDynamic(() => import('./PhotoCropUpload'), { ssr: false })
+import PhotoCropUpload from '@/app/profile/PhotoCropUpload'
+import ProfileGallery from '@/app/profile/ProfileGallery'
+import ProfilePreview from '@/app/profile/ProfilePreview'
 
 import { uploadProfilePhotos } from '@/lib/photo-upload'
 import { useCallback } from 'react'
@@ -61,15 +59,24 @@ function toggleArrayItem(arr: string[], item: string): string[] {
   return arr.includes(item) ? arr.filter((v) => v !== item) : [...arr, item]
 }
 
-export default function ProfilePage() {
+function hasValueCaseInsensitive(items: string[], candidate: string): boolean {
+  const normalizedCandidate = candidate.trim().toLowerCase()
+  return items.some((item) => item.trim().toLowerCase() === normalizedCandidate)
+}
+
+function ProfileContent() {
   const [form, setForm] = useState<ProfileForm>(EMPTY_FORM)
   const [username, setUsername] = useState('')
+  const [memberRole, setMemberRole] = useState('MEMBER')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [photoUrls, setPhotoUrls] = useState<string[]>([])
+  const [customLookingFor, setCustomLookingFor] = useState('')
+  const [customInterest, setCustomInterest] = useState('')
   const searchParams = useSearchParams()
+  const router = useRouter()
 
   useEffect(() => {
     let mounted = true
@@ -80,7 +87,13 @@ export default function ProfilePage() {
 
         if (!mounted) return
 
+        if (response.user.role === 'MODEL_VERIFIED') {
+          router.replace(ROUTES.DASHBOARD)
+          return
+        }
+
         setUsername(response.user.username)
+        setMemberRole(response.user.role || 'MEMBER')
         setForm({
           name: response.user.displayName || '',
           avatarUrl: response.profile.avatarUrl || '',
@@ -109,7 +122,7 @@ export default function ProfilePage() {
     return () => {
       mounted = false
     }
-  }, [])
+  }, [router])
 
   const handlePhotoUpload = useCallback(async (files: FileList) => {
     setError('')
@@ -136,6 +149,49 @@ export default function ProfilePage() {
     setForm((prev) => ({ ...prev, [key]: value }))
     setError('')
     setMessage('')
+  }
+
+  function addCustomLookingFor() {
+    const value = customLookingFor.trim()
+    if (!value) {
+      return
+    }
+
+    if (hasValueCaseInsensitive(form.lookingFor, value)) {
+      setCustomLookingFor('')
+      return
+    }
+
+    if (form.lookingFor.length >= LOOKING_FOR_MAX_SELECTIONS) {
+      setError(`You can select up to ${LOOKING_FOR_MAX_SELECTIONS} looking-for tags.`)
+      return
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      lookingFor: [...prev.lookingFor, value],
+    }))
+    setCustomLookingFor('')
+    setError('')
+  }
+
+  function addCustomInterest() {
+    const value = customInterest.trim()
+    if (!value) {
+      return
+    }
+
+    if (hasValueCaseInsensitive(form.interests, value)) {
+      setCustomInterest('')
+      return
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      interests: [...prev.interests, value],
+    }))
+    setCustomInterest('')
+    setError('')
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -187,6 +243,26 @@ export default function ProfilePage() {
             <p className="mt-2 text-sm text-amber-100/80">
               Give your account a display name so other members can recognize you.
             </p>
+          </div>
+        )}
+
+        {!isLoading && (
+          <div className="rounded-3xl border border-white/10 bg-black/30 p-5 backdrop-blur-xl">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.22em] text-stone-400">Standard Member Profile</p>
+                <p className="mt-1 text-xs text-stone-500">Role: {memberRole}</p>
+                <p className="mt-1 text-sm text-stone-300">
+                  Start a private 1-on-1 room or a public broadcast with live text chat.
+                </p>
+              </div>
+              <Link
+                href={ROUTES.PROFILE_CAM}
+                className="rounded-xl border border-white/20 bg-white/[0.06] px-4 py-2 text-sm font-semibold text-stone-100 transition hover:border-white/35 hover:bg-white/[0.1]"
+              >
+                Open Cam Room
+              </Link>
+            </div>
           </div>
         )}
 
@@ -385,6 +461,49 @@ export default function ProfilePage() {
                     </button>
                   )
                 })}
+
+                {form.lookingFor
+                  .filter((opt) => !LOOKING_FOR_OPTIONS.includes(opt))
+                  .map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() =>
+                        setForm((prev) => ({
+                          ...prev,
+                          lookingFor: toggleArrayItem(prev.lookingFor, opt),
+                        }))
+                      }
+                      className="rounded-full border border-emerald-300/35 bg-emerald-400/[0.14] px-4 py-1.5 text-xs font-medium text-emerald-200 transition hover:border-emerald-200/70"
+                    >
+                      {opt} ×
+                    </button>
+                  ))}
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <input
+                  value={customLookingFor}
+                  onChange={(e) => setCustomLookingFor(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      addCustomLookingFor()
+                    }
+                  }}
+                  type="text"
+                  placeholder="Add custom looking-for..."
+                  maxLength={40}
+                  className="rounded-full border border-white/10 bg-white/[0.02] px-3 py-1.5 text-xs text-stone-100 placeholder-stone-400 focus:border-white/30 focus:bg-white/[0.09] outline-none"
+                  autoComplete="off"
+                />
+                <button
+                  type="button"
+                  onClick={addCustomLookingFor}
+                  className="rounded-full border border-amber-400/40 bg-amber-300/20 px-3 py-1.5 text-xs font-semibold text-amber-100 transition hover:border-amber-100/70 hover:bg-amber-200/30"
+                >
+                  Add
+                </button>
               </div>
             </section>
 
@@ -414,35 +533,49 @@ export default function ProfilePage() {
                     </button>
                   )
                 })}
-                {/* Custom interest input */}
-                <form
-                  onSubmit={e => {
-                    e.preventDefault()
-                    const input = e.currentTarget.elements.namedItem('customInterest') as HTMLInputElement
-                    const value = input.value.trim()
-                    if (value && !form.interests.includes(value)) {
-                      setForm(prev => ({ ...prev, interests: [...prev.interests, value] }))
-                    }
-                    input.value = ''
-                  }}
-                  className="flex items-center gap-2"
-                  style={{ minWidth: 0 }}
-                >
+
+                {form.interests
+                  .filter((opt) => !INTEREST_TAG_OPTIONS.includes(opt))
+                  .map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() =>
+                        setForm((prev) => ({
+                          ...prev,
+                          interests: toggleArrayItem(prev.interests, opt),
+                        }))
+                      }
+                      className="rounded-full border border-cyan-300/35 bg-cyan-400/[0.12] px-4 py-1.5 text-xs font-medium text-cyan-200 transition hover:border-cyan-200/70"
+                    >
+                      {opt} ×
+                    </button>
+                  ))}
+              </div>
+
+              <div className="mt-4 flex items-center gap-2" style={{ minWidth: 0 }}>
                   <input
-                    name="customInterest"
                     type="text"
+                    value={customInterest}
+                    onChange={(e) => setCustomInterest(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        addCustomInterest()
+                      }
+                    }}
                     placeholder="Add custom..."
                     className="rounded-full border border-white/10 bg-white/[0.02] px-3 py-1.5 text-xs text-stone-100 placeholder-stone-400 focus:border-white/30 focus:bg-white/[0.09] outline-none"
                     maxLength={32}
                     autoComplete="off"
                   />
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={addCustomInterest}
                     className="rounded-full border border-amber-400/40 bg-amber-300/20 px-3 py-1.5 text-xs font-semibold text-amber-100 transition hover:border-amber-100/70 hover:bg-amber-200/30"
                   >
                     Add
                   </button>
-                </form>
               </div>
             </section>
 
@@ -500,6 +633,14 @@ export default function ProfilePage() {
               />
               <div>
                 <h2 className="mb-2 mt-4 text-sm font-semibold text-stone-200">Photo Gallery</h2>
+                <div className="mb-3 flex justify-end">
+                  <Link
+                    href={ROUTES.PROFILE_CAM}
+                    className="rounded-xl border border-white/20 bg-white/[0.06] px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-stone-100 transition hover:border-white/35 hover:bg-white/[0.1]"
+                  >
+                    Camera
+                  </Link>
+                </div>
                 <PhotoCropUpload onUpload={handlePhotoUpload} />
                 <div className="mt-4">
                   <ProfileGallery photoUrls={photoUrls} />
@@ -510,5 +651,13 @@ export default function ProfilePage() {
         )}
       </div>
     </MemberLayout>
+  )
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={null}>
+      <ProfileContent />
+    </Suspense>
   )
 }
