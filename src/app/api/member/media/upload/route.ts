@@ -45,7 +45,6 @@ export async function POST(request: NextRequest) {
       select: {
         role: true,
         isPremium: true,
-        emailVerified: true,
         profile: {
           select: {
             photoUrls: true,
@@ -57,10 +56,6 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: MESSAGES.LOGIN_INVALID }, { status: 404 })
-    }
-
-    if (!user.emailVerified) {
-      return NextResponse.json({ error: MESSAGES.EMAIL_VERIFICATION_REQUIRED }, { status: 403 })
     }
 
     const policy = getMemberMediaPolicy({ role: user.role, isPremium: user.isPremium })
@@ -100,12 +95,44 @@ export async function POST(request: NextRequest) {
     }
 
     const uploaded = await uploadToBunnyStorage({ file, userId, kind })
+    const nextPhotoUrls =
+      kind === 'photo'
+        ? Array.from(new Set([uploaded.url, ...existingPhotoUrls]))
+        : existingPhotoUrls
+
+    const nextVideoUrls =
+      kind === 'video'
+        ? Array.from(new Set([uploaded.url, ...existingVideoUrls]))
+        : existingVideoUrls
+
+    const profile = await prisma.profile.upsert({
+      where: { userId },
+      create: {
+        userId,
+        photoUrls: nextPhotoUrls,
+        videoUrls: nextVideoUrls,
+      },
+      update: {
+        photoUrls: nextPhotoUrls,
+        videoUrls: nextVideoUrls,
+      },
+      select: {
+        photoUrls: true,
+        videoUrls: true,
+      },
+    })
 
     return NextResponse.json({
       kind,
       url: uploaded.url,
       contentType: uploaded.contentType,
       size: uploaded.size,
+      counts: {
+        photos: profile.photoUrls.length,
+        videos: profile.videoUrls.length,
+      },
+      photoUrls: profile.photoUrls,
+      videoUrls: profile.videoUrls,
     })
   } catch (error) {
     console.error('Member media upload failed:', error)

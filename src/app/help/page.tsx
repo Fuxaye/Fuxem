@@ -58,6 +58,12 @@ export default function HelpPage() {
             Go To Profile
           </Link>
           <Link
+            href={ROUTES.CONTACT}
+            className="rounded-full border border-white/20 bg-transparent px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-stone-300 transition hover:border-white/35 hover:text-stone-100"
+          >
+            Contact
+          </Link>
+          <Link
             href={ROUTES.WELCOME}
             className="rounded-full border border-white/20 bg-transparent px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-stone-300 transition hover:border-white/35 hover:text-stone-100"
           >

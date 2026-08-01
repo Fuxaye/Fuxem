@@ -437,15 +437,15 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
       >
         {/* Top Section */}
         <motion.div variants={itemVariants}>
-          <div className="mb-6 rounded-2xl border border-cyan-200/20 bg-gradient-to-br from-slate-900/80 via-slate-900/60 to-cyan-950/50 p-4 shadow-[0_16px_60px_-30px_rgba(56,189,248,0.45)] backdrop-blur-md md:p-5">
+          <div className="ui-shell-panel mb-6 p-4 md:p-5">
             <div className="flex flex-wrap items-start justify-between gap-3 md:items-end">
               <div className="max-w-2xl space-y-1.5">
-                <p className="text-[11px] uppercase tracking-[0.3em] text-cyan-200/70">Verified Model Dashboard</p>
-                <h1 className="text-2xl font-semibold text-white md:text-3xl">Your Command Center</h1>
-                <p className="text-sm text-slate-200/75">Views, profile completion, and social activity at a glance.</p>
+                <p className="text-[11px] uppercase tracking-[0.3em] text-text-muted">Verified Model Dashboard</p>
+                <h1 className="text-2xl font-semibold text-text-primary md:text-3xl">Your Command Center</h1>
+                <p className="text-sm text-[#cfc9eb]">Views, profile completion, and social activity at a glance.</p>
                 <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                  <Badge className="border border-cyan-300/30 bg-cyan-500/15 text-cyan-100">Live API</Badge>
-                  <Badge className="border border-white/15 bg-white/5 text-slate-200">Updated {lastUpdatedLabel}</Badge>
+                  <Badge className="border border-border-subtle bg-bg-surface text-text-primary">Live API</Badge>
+                  <Badge className="border border-border-subtle bg-bg-surface text-[#cfc9eb]">Updated {lastUpdatedLabel}</Badge>
                   {liveStatus === 'syncing' && (
                     <Badge className="border border-amber-300/30 bg-amber-400/10 text-amber-100">Syncing</Badge>
                   )}
@@ -522,7 +522,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
         <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {modelCards.map((stat) => {
             const card = (
-              <Card className="border-border-subtle/50 bg-black/20 backdrop-blur transition-colors hover:border-primary/30">
+              <Card className="border-border-subtle bg-bg-card/80 backdrop-blur transition-colors hover:border-border-strong">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-text-muted">{stat.title}</CardTitle>
                 </CardHeader>
@@ -555,7 +555,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
 
         {/* Tool Directory */}
         <motion.div variants={itemVariants}>
-          <Card className="bg-gradient-to-br from-bg-surface/50 to-bg-surface/20 border-border-subtle/50">
+          <Card className="border-border-subtle bg-bg-card/80">
             <CardHeader>
               <CardTitle>Tool Directory</CardTitle>
               <CardDescription>Find every core member tool from one place</CardDescription>
@@ -584,7 +584,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
             transition={{ duration: 0.2 }}
             className="lg:col-span-2"
           >
-            <Card className="bg-gradient-to-br from-bg-surface/50 to-bg-surface/20 border-border-subtle/50 overflow-hidden">
+            <Card className="overflow-hidden border-border-subtle bg-bg-card/80">
               <div className="absolute inset-0 bg-gradient-to-br from-burgundy-500/10 via-transparent to-champagne/10 pointer-events-none" />
               <CardHeader>
                 <CardTitle className="text-2xl">Your Profile</CardTitle>
@@ -644,7 +644,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
             whileHover={{ y: -5 }}
             transition={{ duration: 0.2 }}
           >
-            <Card className="bg-gradient-to-br from-bg-surface/50 to-bg-surface/20 border-border-subtle/50 h-full">
+            <Card className="h-full border-border-subtle bg-bg-card/80">
               <CardHeader>
                 <CardTitle className="text-lg">Interests</CardTitle>
               </CardHeader>
@@ -692,7 +692,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
 
         {/* Recent Activity */}
         <motion.div variants={itemVariants}>
-          <Card className="bg-gradient-to-br from-bg-surface/50 to-bg-surface/20 border-border-subtle/50">
+          <Card className="border-border-subtle bg-bg-card/80">
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
               <CardDescription>Your activity over the last 30 days</CardDescription>
@@ -718,7 +718,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
 
         {/* Moon Phase + Weather */}
         <motion.div variants={itemVariants}>
-          <Card className="bg-gradient-to-br from-bg-surface/50 to-bg-surface/20 border-border-subtle/50">
+          <Card className="border-border-subtle bg-bg-card/80">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MoonStar className="h-5 w-5 text-champagne" />
@@ -728,7 +728,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
             </CardHeader>
             <CardContent>
               {weatherWidget.status === 'loading' && (
-                <div className="rounded-xl border border-border-subtle/40 bg-black/10 p-4 text-sm text-text-muted">
+                <div className="rounded-xl border border-border-subtle bg-bg-surface p-4 text-sm text-text-muted">
                   Loading weather and moon phase...
                 </div>
               )}
@@ -748,7 +748,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                   </div>
 
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
-                    <div className="rounded-xl border border-border-subtle/40 bg-black/10 p-4">
+                    <div className="rounded-xl border border-border-subtle bg-bg-surface p-4">
                       <p className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-text-muted">
                         <Thermometer className="h-4 w-4" /> Temp
                       </p>
@@ -758,7 +758,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                       <p className="mt-1 text-xs text-text-muted">Feels like {weatherWidget.data.feelsLikeC}C</p>
                     </div>
 
-                    <div className="rounded-xl border border-border-subtle/40 bg-black/10 p-4">
+                    <div className="rounded-xl border border-border-subtle bg-bg-surface p-4">
                       <p className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-text-muted">
                         <Droplets className="h-4 w-4" /> Humidity
                       </p>
@@ -766,7 +766,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                       <p className="mt-1 text-xs text-text-muted">Weather code {weatherWidget.data.weatherCode}</p>
                     </div>
 
-                    <div className="rounded-xl border border-border-subtle/40 bg-black/10 p-4">
+                    <div className="rounded-xl border border-border-subtle bg-bg-surface p-4">
                       <p className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-text-muted">
                         <Wind className="h-4 w-4" /> Wind
                       </p>
@@ -774,7 +774,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                       <p className="mt-1 text-xs text-text-muted">Sunrise {formatClock(weatherWidget.data.sunrise)}</p>
                     </div>
 
-                    <div className="rounded-xl border border-border-subtle/40 bg-black/10 p-4">
+                    <div className="rounded-xl border border-border-subtle bg-bg-surface p-4">
                       <p className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-text-muted">
                         <MoonStar className="h-4 w-4" /> Moon
                       </p>
@@ -790,7 +790,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
 
         {/* Map Planner */}
         <motion.div variants={itemVariants}>
-          <Card className="overflow-hidden border-border-subtle/50 bg-gradient-to-br from-bg-surface/50 to-bg-surface/20">
+          <Card className="overflow-hidden border-border-subtle bg-bg-card/80">
             <CardHeader>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -880,7 +880,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
                 </a>
               </div>
 
-              <div className="rounded-xl border border-border-subtle/60 bg-black/10 p-2">
+              <div className="rounded-xl border border-border-subtle bg-bg-surface p-2">
                 <iframe
                   title="Member meetup map"
                   src={mapEmbedUrl}

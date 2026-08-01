@@ -172,6 +172,7 @@ export interface MemberProfileResponse {
     lookingFor: string[]
     bio: string
     interests: string[]
+    kinks: string[]
     avatarUrl: string
     photoUrls: string[]
     videoUrls: string[]
@@ -225,6 +226,7 @@ export interface UpdateMemberProfileInput {
   lookingFor: string[]
   bio?: string
   interests?: string[]
+  kinks?: string[]
   avatarUrl?: string
   photoUrls?: string[]
   videoUrls?: string[]

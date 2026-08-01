@@ -122,30 +122,29 @@ export default function SearchPageClient({ initialResults = [] }: SearchPageClie
       >
         {/* Header Section */}
         <motion.div variants={itemVariants}>
-          <div className="space-y-4">
+          <div className="ui-shell-panel space-y-4 p-5 md:p-6">
             <div>
               <h1 className="text-4xl md:text-5xl font-bold text-text-primary">
                 Find Your <span className="bg-gradient-to-r from-champagne to-burgundy-500 bg-clip-text text-transparent">Next Connection</span>
               </h1>
-              <p className="text-text-muted text-lg mt-2">Discover amazing members in the community</p>
+              <p className="mt-2 text-lg text-text-muted">Discover amazing members in the community</p>
             </div>
 
-            {/* Search Bar */}
             <div className="flex gap-2">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-text-muted pointer-events-none" />
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-text-muted" />
                 <Input
                   placeholder="Search by name or username..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-bg-surface/50 border-border-subtle/50 hover:border-primary/30 focus:border-primary/50"
+                  className="pl-10"
                 />
               </div>
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => setShowFilters(!showFilters)}
-                className="border-border-subtle/50 hover:border-primary/30"
+                className="border-border-subtle bg-bg-surface hover:border-border-strong"
               >
                 <SlidersHorizontal className="h-5 w-5" />
               </Button>
@@ -161,7 +160,7 @@ export default function SearchPageClient({ initialResults = [] }: SearchPageClie
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
           >
-            <Card className="bg-gradient-to-br from-bg-surface/50 to-bg-surface/20 border-border-subtle/50">
+            <Card className="border-border-subtle bg-bg-card/80">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>Advanced Filters</span>
@@ -182,7 +181,7 @@ export default function SearchPageClient({ initialResults = [] }: SearchPageClie
                   <Button
                     type="button"
                     variant={onlineOnly ? 'default' : 'outline'}
-                    className="w-full justify-start border-border-subtle/50 hover:border-primary/30"
+                    className="w-full justify-start border-border-subtle bg-bg-surface hover:border-border-strong"
                     onClick={() => setOnlineOnly((current) => !current)}
                   >
                     Online Only
@@ -190,7 +189,7 @@ export default function SearchPageClient({ initialResults = [] }: SearchPageClie
                   <Button
                     type="button"
                     variant={hasPhoto ? 'default' : 'outline'}
-                    className="w-full justify-start border-border-subtle/50 hover:border-primary/30"
+                    className="w-full justify-start border-border-subtle bg-bg-surface hover:border-border-strong"
                     onClick={() => setHasPhoto((current) => !current)}
                   >
                     Has Photo
@@ -198,7 +197,7 @@ export default function SearchPageClient({ initialResults = [] }: SearchPageClie
                   <Button
                     type="button"
                     variant={lastActive === 'today' ? 'default' : 'outline'}
-                    className="w-full justify-start border-border-subtle/50 hover:border-primary/30"
+                    className="w-full justify-start border-border-subtle bg-bg-surface hover:border-border-strong"
                     onClick={() => setLastActive((current) => (current === 'today' ? 'any' : 'today'))}
                   >
                     Active Today
@@ -240,7 +239,7 @@ export default function SearchPageClient({ initialResults = [] }: SearchPageClie
                 // Loading Skeletons
                 Array.from({ length: 8 }).map((_, idx) => (
                   <motion.div key={idx} variants={itemVariants}>
-                    <Card className="bg-gradient-to-br from-bg-surface/50 to-bg-surface/20 border-border-subtle/50 overflow-hidden">
+                    <Card className="overflow-hidden border-border-subtle bg-bg-card/80">
                       <Skeleton className="h-48 w-full" />
                       <CardContent className="p-4 space-y-3">
                         <Skeleton className="h-5 w-32" />
@@ -261,9 +260,8 @@ export default function SearchPageClient({ initialResults = [] }: SearchPageClie
                     whileHover={{ y: -8 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <Card className="bg-gradient-to-br from-bg-surface/50 to-bg-surface/20 border-border-subtle/50 hover:border-primary/30 overflow-hidden cursor-pointer transition-all group">
-                      {/* Avatar Placeholder */}
-                      <div className="relative h-48 bg-gradient-to-br from-burgundy-600/20 to-champagne/10 overflow-hidden">
+                    <Card className="group cursor-pointer overflow-hidden border-border-subtle bg-bg-card/80 transition-all hover:border-border-strong">
+                      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-[#7C5CFC]/15 to-[#3DCFCF]/10">
                         {member.isOnline && (
                           <div className="absolute top-2 right-2 z-10 flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/80 backdrop-blur-sm">
                             <div className="h-2 w-2 rounded-full bg-green-300 animate-pulse" />
@@ -341,7 +339,7 @@ export default function SearchPageClient({ initialResults = [] }: SearchPageClie
                           </Button>
                           <Link
                             href={`${ROUTES.MESSAGES}/${member.id}`}
-                            className="inline-flex h-9 items-center justify-center rounded-md border border-border-subtle/50 bg-background px-3 text-xs font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                            className="inline-flex h-9 items-center justify-center rounded-md border border-border-subtle bg-bg-surface px-3 text-xs font-medium text-text-primary transition-colors hover:bg-bg-card"
                           >
                             Message
                           </Link>
@@ -356,7 +354,7 @@ export default function SearchPageClient({ initialResults = [] }: SearchPageClie
                   variants={itemVariants}
                   className="col-span-full"
                 >
-                  <Card className="bg-gradient-to-br from-bg-surface/50 to-bg-surface/20 border-border-subtle/50 py-12">
+                  <Card className="border-border-subtle bg-bg-card/80 py-12">
                     <CardContent className="text-center space-y-4">
                       <Search className="h-12 w-12 text-text-muted mx-auto opacity-50" />
                       <div>

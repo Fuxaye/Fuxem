@@ -19,5 +19,5 @@ export const metadata: Metadata = {
 }
 
 export default function Welcome() {
-  return <CreatorPlatformShell />
+  return <CreatorPlatformShell initialView="home" />
 }

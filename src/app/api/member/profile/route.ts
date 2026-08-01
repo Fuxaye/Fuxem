@@ -27,6 +27,19 @@ function normalizeStringArray(value: unknown): string[] | null {
   return Array.from(new Set(parsed))
 }
 
+function normalizeJsonStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  const parsed = value
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.trim())
+    .filter(Boolean)
+
+  return Array.from(new Set(parsed))
+}
+
 function buildLocation(city: string, state: string, country: string): string {
   return [city, state, country].filter(Boolean).join(', ')
 }
@@ -54,6 +67,7 @@ async function buildProfileResponse(userId: string) {
           lookingFor: true,
           bio: true,
           interests: true,
+          kinks: true,
           avatarUrl: true,
           photoUrls: true,
           videoUrls: true,
@@ -93,6 +107,7 @@ async function buildProfileResponse(userId: string) {
       lookingFor: user.profile?.lookingFor || [],
       bio: user.profile?.bio || '',
       interests: user.profile?.interests || [],
+      kinks: normalizeJsonStringArray(user.profile?.kinks),
       avatarUrl: user.profile?.avatarUrl || '',
       photoUrls,
       videoUrls,
@@ -167,6 +182,7 @@ export async function PATCH(request: NextRequest) {
             lookingFor: true,
             bio: true,
             interests: true,
+            kinks: true,
             avatarUrl: true,
             photoUrls: true,
             videoUrls: true,
@@ -191,6 +207,7 @@ export async function PATCH(request: NextRequest) {
     const nextOrientationOther = normalizeString(body.orientationOther) ?? user.profile?.orientationOther ?? ''
     const nextLookingFor = normalizeStringArray(body.lookingFor) ?? user.profile?.lookingFor ?? []
     const nextInterests = normalizeStringArray(body.interests) ?? user.profile?.interests ?? []
+    const nextKinks = normalizeStringArray(body.kinks) ?? normalizeJsonStringArray(user.profile?.kinks)
     const nextBio = normalizeString(body.bio) ?? user.profile?.bio ?? ''
     const nextAvatarUrl = normalizeString(body.avatarUrl) ?? user.profile?.avatarUrl ?? ''
     const nextPhotoUrls = normalizeStringArray(body.photoUrls) ?? user.profile?.photoUrls ?? []
@@ -242,6 +259,7 @@ export async function PATCH(request: NextRequest) {
           orientationOther: nextOrientationOther,
           lookingFor: nextLookingFor,
           interests: nextInterests,
+          kinks: nextKinks,
           bio: nextBio,
           avatarUrl: nextAvatarUrl,
           photoUrls: nextPhotoUrls,
@@ -258,6 +276,7 @@ export async function PATCH(request: NextRequest) {
           orientationOther: nextOrientationOther,
           lookingFor: nextLookingFor,
           interests: nextInterests,
+          kinks: nextKinks,
           bio: nextBio,
           avatarUrl: nextAvatarUrl,
           photoUrls: nextPhotoUrls,

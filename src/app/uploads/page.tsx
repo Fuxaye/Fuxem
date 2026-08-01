@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 }
 
 export default function UploadsPage() {
-  return <CreatorPlatformShell />
+  return <CreatorPlatformShell initialView="uploads" />
 }

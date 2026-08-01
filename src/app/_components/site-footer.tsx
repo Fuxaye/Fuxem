@@ -8,6 +8,7 @@ import { ROUTES } from '@/lib/constants'
 const PUBLIC_FOOTER_ROUTES = new Set([
   ROUTES.HOME,
   ROUTES.HELP,
+  ROUTES.CONTACT,
   ROUTES.WELCOME,
   ROUTES.LOG_IN,
   ROUTES.LOGIN,

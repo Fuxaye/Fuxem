@@ -1,5 +1,5 @@
-Contact: mailto:security@rockbaybooty.com
+Contact: mailto:security@fuxem.com
 Expires: 2027-12-31T23:59:59.000Z
-Canonical: https://rockbaybooty.com/.well-known/security.txt
+Canonical: https://fuxem.com/.well-known/security.txt
 Preferred-Languages: en
-Policy: https://rockbaybooty.com/welcome
+Policy: https://fuxem.com/welcome

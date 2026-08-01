@@ -280,6 +280,7 @@ export const ROUTES = {
   PUBLIC_MEDIA: '/publicmedia',
   PUBVID: '/pubvid',
   HELP: '/help',
+  CONTACT: '/contact',
   LEGAL_PRIVACY: '/legal/privacy',
   LEGAL_TERMS: '/legal/terms',
   LEGAL_COMMUNITY_GUIDELINES: '/legal/community-guidelines',

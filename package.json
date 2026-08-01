@@ -1,6 +1,7 @@
 {
   "scripts": {
     "dev": "next dev",
+    "dev:stable": "WATCHPACK_POLLING=true next dev",
     "build": "prisma generate && next build",
     "build:vercel": "prisma generate && next build",
     "build:vps": "prisma generate && NODE_ENV=production next build",
