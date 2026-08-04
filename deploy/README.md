@@ -27,6 +27,22 @@ This document explains how to install and run Fuxem on an Ubuntu VPS using Node.
 
 ## Deploy steps
 
+### Option A: One-shot Ubuntu VPS bootstrap
+
+For a fresh self-managed Ubuntu VPS, you can run the repo-provided bootstrap script:
+
+```bash
+sudo bash deploy/setup-vps.sh
+```
+
+Example with required values:
+
+```bash
+sudo DOMAIN=fuxem.com EMAIL=admin@fuxem.com DB_PASSWORD='strongpassword' bash deploy/setup-vps.sh
+```
+
+The script installs Node.js, PostgreSQL, Nginx, Certbot, PM2, clones the app, creates a production `.env`, builds the app, runs migrations, configures Nginx, enables HTTPS, and starts the app with PM2.
+
 ### 1. Install system dependencies
 
 ```bash
@@ -134,6 +150,8 @@ sudo pm2 startup
 - Use a managed Postgres for reliability if possible.
 - For local storage replacement, the app currently expects Supabase storage.
 - LiveKit credentials are required for camera tokens.
+- For a self-managed VPS, make sure your domain DNS points to the server before running Certbot.
+- If you want analytics later, run: `sudo bash deploy/setup-free-analytics.sh <your-domain>`.
 
 ## Free VPS analytics
 
