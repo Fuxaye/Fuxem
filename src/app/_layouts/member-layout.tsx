@@ -275,10 +275,10 @@ export default function MemberLayout({ children, initialUser, isBurner }: Member
         }}
       />
 
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_15%_10%,rgba(124,92,252,0.15),transparent_42%),radial-gradient(circle_at_85%_20%,rgba(61,207,207,0.12),transparent_40%),linear-gradient(160deg,rgba(13,12,20,0.93)_0%,rgba(13,12,20,0.86)_48%,rgba(13,12,20,0.92)_100%)]" />
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_15%_10%,rgba(124,92,252,0.16),transparent_42%),radial-gradient(circle_at_85%_20%,rgba(61,207,207,0.14),transparent_40%),linear-gradient(160deg,rgba(13,12,20,0.97)_0%,rgba(13,12,20,0.9)_48%,rgba(19,17,30,0.95)_100%)]" />
 
       <div className="relative z-10 flex min-h-screen">
-        <aside className="hidden w-[280px] shrink-0 border-r border-border-subtle bg-bg-surface/58 backdrop-blur-md md:flex md:flex-col">
+        <aside className="hidden w-[280px] shrink-0 border-r border-border-subtle bg-[linear-gradient(180deg,rgba(19,17,30,0.96),rgba(13,12,20,0.92))] backdrop-blur-xl md:flex md:flex-col">
           <div className="border-b border-border-subtle p-6">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#7C5CFC] to-[#9B7BFF] text-sm font-bold text-white shadow-[0_8px_22px_rgba(124,92,252,0.45)]">
@@ -325,7 +325,7 @@ export default function MemberLayout({ children, initialUser, isBurner }: Member
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <div className="fixed left-0 right-0 top-0 z-20 flex items-center justify-between border-b border-border-subtle bg-bg-surface/58 px-4 py-4 backdrop-blur-md md:hidden">
+          <div className="fixed left-0 right-0 top-0 z-20 flex items-center justify-between border-b border-border-subtle bg-[linear-gradient(180deg,rgba(19,17,30,0.96),rgba(13,12,20,0.92))] px-4 py-4 backdrop-blur-xl md:hidden">
             <Button
               variant="ghost"
               size="icon"
@@ -352,7 +352,7 @@ export default function MemberLayout({ children, initialUser, isBurner }: Member
                   initial={{ x: -280 }}
                   animate={{ x: 0 }}
                   exit={{ x: -280 }}
-                  className="fixed left-0 top-0 z-40 flex h-full w-80 flex-col border-r border-border-subtle bg-bg-surface/95 shadow-xl backdrop-blur-md md:hidden"
+                  className="fixed left-0 top-0 z-40 flex h-full w-80 flex-col border-r border-border-subtle bg-[linear-gradient(180deg,rgba(19,17,30,0.98),rgba(13,12,20,0.96))] shadow-[0_24px_70px_rgba(0,0,0,0.34)] backdrop-blur-xl md:hidden"
                 >
                   <div className="border-b border-border-subtle p-6">
                     <div className="flex items-center gap-3">

@@ -425,9 +425,9 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
   return (
     <div className="relative min-h-screen overflow-hidden p-4 md:p-8">
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -left-20 top-8 h-72 w-72 rounded-full bg-cyan-500/15 blur-3xl" />
-        <div className="absolute right-0 top-24 h-96 w-96 rounded-full bg-fuchsia-500/10 blur-3xl" />
-        <div className="absolute bottom-10 left-1/3 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl" />
+        <div className="absolute -left-20 top-8 h-72 w-72 rounded-full bg-[#7C5CFC]/15 blur-3xl" />
+        <div className="absolute right-0 top-24 h-96 w-96 rounded-full bg-[#FF6B6B]/10 blur-3xl" />
+        <div className="absolute bottom-10 left-1/3 h-80 w-80 rounded-full bg-[#3DCFCF]/10 blur-3xl" />
       </div>
       <motion.div
         variants={containerVariants}
@@ -440,17 +440,17 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
           <div className="ui-shell-panel mb-6 p-4 md:p-5">
             <div className="flex flex-wrap items-start justify-between gap-3 md:items-end">
               <div className="max-w-2xl space-y-1.5">
-                <p className="text-[11px] uppercase tracking-[0.3em] text-text-muted">Verified Model Dashboard</p>
-                <h1 className="text-2xl font-semibold text-text-primary md:text-3xl">Your Command Center</h1>
+                <p className="text-[11px] uppercase tracking-[0.3em] text-[#6B6585]">Verified Model Dashboard</p>
+                <h1 className="text-2xl font-semibold text-[#EDE9FF] md:text-3xl">Your Command Center</h1>
                 <p className="text-sm text-[#cfc9eb]">Views, profile completion, and social activity at a glance.</p>
                 <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                  <Badge className="border border-border-subtle bg-bg-surface text-text-primary">Live API</Badge>
-                  <Badge className="border border-border-subtle bg-bg-surface text-[#cfc9eb]">Updated {lastUpdatedLabel}</Badge>
+                  <Badge className="border border-[rgba(124,92,252,0.2)] bg-[rgba(30,28,46,0.95)] text-[#EDE9FF]">Live API</Badge>
+                  <Badge className="border border-[rgba(124,92,252,0.2)] bg-[rgba(30,28,46,0.95)] text-[#cfc9eb]">Updated {lastUpdatedLabel}</Badge>
                   {liveStatus === 'syncing' && (
-                    <Badge className="border border-amber-300/30 bg-amber-400/10 text-amber-100">Syncing</Badge>
+                    <Badge className="border border-[#FF6B6B]/30 bg-[#FF6B6B]/10 text-[#ffd0d0]">Syncing</Badge>
                   )}
                   {liveStatus === 'error' && (
-                    <Badge className="border border-rose-300/30 bg-rose-500/15 text-rose-100">Sync failed</Badge>
+                    <Badge className="border border-[#FF6B6B]/30 bg-[#FF6B6B]/10 text-[#ffd0d0]">Sync failed</Badge>
                   )}
                 </div>
               </div>
@@ -458,19 +458,19 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
               <div className="flex flex-wrap gap-2">
                 <Link
                   href={ROUTES.SEARCH}
-                  className="rounded-xl border border-sky-300/30 bg-sky-400/10 px-3 py-2 text-[11px] font-semibold text-sky-100 transition hover:bg-sky-300/15"
+                  className="rounded-full border border-[rgba(124,92,252,0.2)] bg-[rgba(30,28,46,0.95)] px-3 py-2 text-[11px] font-semibold text-[#EDE9FF] transition hover:border-[rgba(124,92,252,0.36)]"
                 >
                   Discover Members
                 </Link>
                 <Link
                   href={ROUTES.FRIENDS}
-                  className="rounded-xl border border-emerald-300/30 bg-emerald-400/10 px-3 py-2 text-[11px] font-semibold text-emerald-100 transition hover:bg-emerald-300/15"
+                  className="rounded-full border border-[rgba(61,207,207,0.24)] bg-[rgba(61,207,207,0.12)] px-3 py-2 text-[11px] font-semibold text-[#bff8f8] transition hover:bg-[rgba(61,207,207,0.18)]"
                 >
                   View Friends
                 </Link>
                 <Link
                   href={ROUTES.MESSAGES}
-                  className="rounded-xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-[11px] font-semibold text-amber-100 transition hover:bg-amber-200/15"
+                  className="rounded-full border border-[rgba(255,107,107,0.24)] bg-[rgba(255,107,107,0.12)] px-3 py-2 text-[11px] font-semibold text-[#ffd0d0] transition hover:bg-[rgba(255,107,107,0.18)]"
                 >
                   Open Messages
                 </Link>
@@ -484,7 +484,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
           {statCards.map((stat, index) => {
             const Icon = stat.icon
             const cardContent = (
-              <Card className="bg-gradient-to-br from-bg-surface/50 to-bg-surface/20 border-border-subtle/50 transition-colors hover:border-primary/30">
+              <Card className="border-[rgba(124,92,252,0.16)] bg-[linear-gradient(135deg,rgba(19,17,30,0.96),rgba(13,12,20,0.92))] transition-colors hover:border-[rgba(124,92,252,0.3)]">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-text-muted">
                     {stat.title}
@@ -522,7 +522,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
         <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {modelCards.map((stat) => {
             const card = (
-              <Card className="border-border-subtle bg-bg-card/80 backdrop-blur transition-colors hover:border-border-strong">
+              <Card className="border-[rgba(124,92,252,0.16)] bg-[rgba(19,17,30,0.92)] backdrop-blur transition-colors hover:border-[rgba(124,92,252,0.3)]">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-text-muted">{stat.title}</CardTitle>
                 </CardHeader>
@@ -555,7 +555,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
 
         {/* Tool Directory */}
         <motion.div variants={itemVariants}>
-          <Card className="border-border-subtle bg-bg-card/80">
+          <Card className="border-[rgba(124,92,252,0.16)] bg-[rgba(19,17,30,0.92)]">
             <CardHeader>
               <CardTitle>Tool Directory</CardTitle>
               <CardDescription>Find every core member tool from one place</CardDescription>
@@ -584,7 +584,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
             transition={{ duration: 0.2 }}
             className="lg:col-span-2"
           >
-            <Card className="overflow-hidden border-border-subtle bg-bg-card/80">
+            <Card className="overflow-hidden border-[rgba(124,92,252,0.16)] bg-[rgba(19,17,30,0.92)]">
               <div className="absolute inset-0 bg-gradient-to-br from-burgundy-500/10 via-transparent to-champagne/10 pointer-events-none" />
               <CardHeader>
                 <CardTitle className="text-2xl">Your Profile</CardTitle>
@@ -644,7 +644,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
             whileHover={{ y: -5 }}
             transition={{ duration: 0.2 }}
           >
-            <Card className="h-full border-border-subtle bg-bg-card/80">
+            <Card className="h-full border-[rgba(124,92,252,0.16)] bg-[rgba(19,17,30,0.92)]">
               <CardHeader>
                 <CardTitle className="text-lg">Interests</CardTitle>
               </CardHeader>
@@ -692,7 +692,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
 
         {/* Recent Activity */}
         <motion.div variants={itemVariants}>
-          <Card className="border-border-subtle bg-bg-card/80">
+          <Card className="border-[rgba(124,92,252,0.16)] bg-[rgba(19,17,30,0.92)]">
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
               <CardDescription>Your activity over the last 30 days</CardDescription>
@@ -718,7 +718,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
 
         {/* Moon Phase + Weather */}
         <motion.div variants={itemVariants}>
-          <Card className="border-border-subtle bg-bg-card/80">
+          <Card className="border-[rgba(124,92,252,0.16)] bg-[rgba(19,17,30,0.92)]">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MoonStar className="h-5 w-5 text-champagne" />
