@@ -5,6 +5,9 @@ import LegalLinks from '@/app/_components/legal-links'
 import { ROUTES } from '@/lib/constants'
 import prisma from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export const metadata: Metadata = {
   title: 'Public Preview | fuxem',
   description:
@@ -38,25 +41,46 @@ function formatDate(value: Date): string {
 }
 
 export default async function PublicPreviewPage() {
-  const featuredVideos = await prisma.video.findMany({
-    where: { isPublic: true },
-    orderBy: { createdAt: 'desc' },
-    take: 6,
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      thumbnailUrl: true,
-      views: true,
-      createdAt: true,
-      user: {
+  let featuredVideos: Array<{
+    id: string
+    title: string | null
+    description: string | null
+    thumbnailUrl: string | null
+    views: number
+    createdAt: Date
+    user: {
+      displayName: string | null
+      username: string | null
+    }
+  }> = []
+
+  const shouldLoadFeaturedVideos = process.env.NEXT_PHASE !== 'phase-production-build'
+
+  if (shouldLoadFeaturedVideos) {
+    try {
+      featuredVideos = await prisma.video.findMany({
+        where: { isPublic: true },
+        orderBy: { createdAt: 'desc' },
+        take: 6,
         select: {
-          displayName: true,
-          username: true,
+          id: true,
+          title: true,
+          description: true,
+          thumbnailUrl: true,
+          views: true,
+          createdAt: true,
+          user: {
+            select: {
+              displayName: true,
+              username: true,
+            },
+          },
         },
-      },
-    },
-  })
+      })
+    } catch {
+      featuredVideos = []
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[#070b12] px-4 pb-14 pt-10 text-stone-100 sm:px-6 lg:px-8">

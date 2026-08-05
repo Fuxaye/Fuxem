@@ -1,20 +1,22 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/next'
-import { DM_Mono, DM_Sans, Nunito } from 'next/font/google'
+import { Cinzel_Decorative, Cormorant_Garamond, DM_Mono } from 'next/font/google'
 
 import AgeGate from '@/app/_components/age-gate'
 import CookieConsent from '@/app/_components/cookie-consent'
 import SiteFooter from '@/app/_components/site-footer'
 
-const nunito = Nunito({
+const cinzel = Cinzel_Decorative({
   subsets: ['latin'],
-  variable: '--font-nunito',
+  weight: ['400', '700', '900'],
+  variable: '--font-cinzel-decorative',
 })
 
-const dmSans = DM_Sans({
+const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
-  variable: '--font-dm-sans',
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-cormorant-garamond',
 })
 
 const dmMono = DM_Mono({
@@ -31,7 +33,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark" data-scroll-behavior="smooth">
-      <body className={`${nunito.variable} ${dmSans.variable} ${dmMono.variable}`}>
+      <body className={`${cinzel.variable} ${cormorant.variable} ${dmMono.variable}`}>
         <AgeGate />
         <CookieConsent />
         {children}

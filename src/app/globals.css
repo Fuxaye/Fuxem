@@ -4,21 +4,21 @@
 
 @layer base {
   :root {
-    --background: 247 28% 7%;
-    --foreground: 251 100% 96%;
-    --card: 247 27% 10%;
-    --card-foreground: 251 100% 96%;
-    --popover: 247 27% 10%;
-    --popover-foreground: 251 100% 96%;
+    --background: 250 30% 8%;
+    --foreground: 252 100% 96%;
+    --card: 248 26% 11%;
+    --card-foreground: 252 100% 96%;
+    --popover: 248 26% 11%;
+    --popover-foreground: 252 100% 96%;
     --muted: 252 14% 48%;
     --muted-foreground: 252 14% 48%;
-    --accent: 251 96% 68%;
-    --accent-foreground: 251 100% 96%;
-    --destructive: 358 90% 67%;
-    --destructive-foreground: 251 100% 96%;
-    --border: 251 100% 96%;
-    --input: 247 25% 15%;
-    --ring: 251 96% 68%;
+    --accent: 252 96% 68%;
+    --accent-foreground: 252 100% 96%;
+    --destructive: 2 100% 69%;
+    --destructive-foreground: 252 100% 96%;
+    --border: 252 100% 96%;
+    --input: 248 24% 15%;
+    --ring: 252 96% 68%;
     --radius: 1rem;
     --bg-base: #0d0c14;
     --bg-card: #13111e;
@@ -27,27 +27,30 @@
     --text-muted: #6b6585;
     --border-subtle: rgba(124, 92, 252, 0.12);
     --border-strong: rgba(124, 92, 252, 0.2);
-    --font-heading: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
-    --font-body: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
-    --font-mono: var(--font-dm-mono), ui-monospace, SFMono-Regular, monospace;
+    --accent-violet: #7c5cfc;
+    --accent-coral: #ff6b6b;
+    --accent-teal: #3dcfcf;
+    --font-heading-family: var(--font-cinzel-decorative), 'Times New Roman', serif;
+    --font-body-family: var(--font-cormorant-garamond), 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+    --font-mono-family: var(--font-dm-mono), ui-monospace, SFMono-Regular, monospace;
   }
 
   .dark {
-    --background: 247 28% 7%;
-    --foreground: 251 100% 96%;
-    --card: 247 27% 10%;
-    --card-foreground: 251 100% 96%;
-    --popover: 247 27% 10%;
-    --popover-foreground: 251 100% 96%;
+    --background: 250 30% 8%;
+    --foreground: 252 100% 96%;
+    --card: 248 26% 11%;
+    --card-foreground: 252 100% 96%;
+    --popover: 248 26% 11%;
+    --popover-foreground: 252 100% 96%;
     --muted: 252 14% 48%;
     --muted-foreground: 252 14% 48%;
-    --accent: 251 96% 68%;
-    --accent-foreground: 251 100% 96%;
-    --destructive: 358 90% 67%;
-    --destructive-foreground: 251 100% 96%;
-    --border: 251 100% 96%;
-    --input: 247 25% 15%;
-    --ring: 251 96% 68%;
+    --accent: 252 96% 68%;
+    --accent-foreground: 252 100% 96%;
+    --destructive: 2 100% 69%;
+    --destructive-foreground: 252 100% 96%;
+    --border: 252 100% 96%;
+    --input: 248 24% 15%;
+    --ring: 252 96% 68%;
   }
 }
 
@@ -65,7 +68,7 @@ body::-webkit-scrollbar {
 
 html {
   scroll-behavior: smooth;
-  font-family: var(--font-body);
+  font-family: var(--font-body-family);
 }
 
 h1,
@@ -74,7 +77,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font-heading);
+  font-family: var(--font-heading-family);
 }
 
 ::selection {
@@ -92,13 +95,13 @@ select {
 body {
   background-color: var(--bg-base);
   color: var(--text-primary);
-  font-family: var(--font-body);
+  font-family: var(--font-body-family);
 }
 
 @layer components {
   .ui-shell-panel {
     border: 1px solid var(--border-subtle);
-    border-radius: 1rem;
+    border-radius: 1.15rem;
     background: linear-gradient(180deg, rgba(19, 17, 30, 0.96), rgba(13, 12, 20, 0.96));
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(20px);
@@ -106,8 +109,8 @@ body {
 
   .ui-card {
     border: 1px solid var(--border-subtle);
-    border-radius: 1rem;
-    background: var(--bg-card);
+    border-radius: 1.05rem;
+    background: linear-gradient(180deg, rgba(19, 17, 30, 0.96), rgba(14, 13, 24, 0.96));
     transition: transform 150ms ease, border-color 150ms ease, background 150ms ease, opacity 150ms ease;
   }
 
@@ -120,29 +123,33 @@ body {
     border-radius: 999px;
     background: linear-gradient(135deg, #7c5cfc 0%, #9b7bff 100%);
     color: #fff;
+    box-shadow: 0 10px 30px rgba(124, 92, 252, 0.28);
     transition: opacity 150ms ease, transform 150ms ease, box-shadow 150ms ease;
   }
 
   .ui-button-primary:hover {
-    opacity: 0.9;
+    opacity: 0.95;
+    transform: translateY(-1px);
+    box-shadow: 0 14px 34px rgba(124, 92, 252, 0.34);
   }
 
   .ui-button-secondary {
     border-radius: 999px;
     border: 1px solid rgba(124, 92, 252, 0.2);
-    background: #1e1c2e;
+    background: rgba(30, 28, 46, 0.95);
     color: #c4bdee;
     transition: opacity 150ms ease, border-color 150ms ease, transform 150ms ease;
   }
 
   .ui-button-secondary:hover {
     border-color: rgba(124, 92, 252, 0.36);
+    transform: translateY(-1px);
   }
 
   .ui-input {
     border: 1px solid rgba(124, 92, 252, 0.2);
     border-radius: 0.95rem;
-    background: #1e1c2e;
+    background: rgba(30, 28, 46, 0.95);
     color: #ede9ff;
     outline: none;
     transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;

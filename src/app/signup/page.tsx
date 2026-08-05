@@ -185,14 +185,6 @@ function SignupContent() {
           >
             Sign Up
           </h1>
-          <div className="mt-3 flex items-center justify-center gap-2">
-            <Link
-              href={ROUTES.HELP}
-              className="rounded-full border border-sky-300/30 bg-sky-400/12 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-sky-100 transition hover:bg-sky-300/18"
-            >
-              Need help?
-            </Link>
-          </div>
           {status === 'success' ? (
             <div className="mt-6 space-y-4">
               <p className="rounded-xl border border-emerald-300/35 bg-emerald-400/12 px-4 py-3 text-sm text-emerald-100">
@@ -365,11 +357,6 @@ function SignupContent() {
               <p className="text-center text-[10px] uppercase tracking-[0.2em] text-stone-500" style={{ fontFamily: CP }}>
                 <Link href={ROUTES.LOGIN} className="hover:text-stone-300 transition-colors">
                   already a member? log in
-                </Link>
-              </p>
-              <p className="text-center text-[10px] uppercase tracking-[0.2em] text-stone-500" style={{ fontFamily: CP }}>
-                <Link href={ROUTES.HELP} className="hover:text-stone-300 transition-colors">
-                  view help center
                 </Link>
               </p>
               <p className="text-center text-[10px] leading-relaxed text-stone-500">
