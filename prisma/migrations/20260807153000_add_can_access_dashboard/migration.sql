@@ -1,0 +1,2 @@
+ALTER TABLE "User"
+ADD COLUMN "canAccessDashboard" BOOLEAN NOT NULL DEFAULT false;

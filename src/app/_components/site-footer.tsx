@@ -28,7 +28,7 @@ export default function SiteFooter() {
   return (
     <footer className="border-t border-white/10 bg-[#05070f] px-4 py-5 text-stone-400 sm:px-6">
       <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
-        <p className="text-[11px] uppercase tracking-[0.16em] text-stone-500">fuxem.xyz legal and account policies</p>
+        <p className="text-[11px] uppercase tracking-[0.16em] text-stone-500">The Fuxem Project, adults only legal and account policies</p>
         <LegalLinks className="text-xs uppercase tracking-[0.14em]" />
       </div>
     </footer>
