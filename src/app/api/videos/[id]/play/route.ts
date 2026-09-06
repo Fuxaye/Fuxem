@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUserId } from '@/lib/auth'
 import { MESSAGES } from '@/lib/constants'
 import prisma from '@/lib/prisma'
+import { isEligiblePublicVideo } from '@/lib/public-video-policy'
 
 type PublicPlaybackTokenPayload = {
   videoId?: string
@@ -42,6 +43,12 @@ export async function GET(
         userId: true,
         videoUrl: true,
         isPublic: true,
+        user: {
+          select: {
+            role: true,
+            status: true,
+          },
+        },
       },
     })
 
@@ -51,8 +58,9 @@ export async function GET(
 
     const requesterId = await getAuthenticatedUserId(request)
     const playbackToken = request.nextUrl.searchParams.get('token')
+    const isPublicVideo = isEligiblePublicVideo(video)
 
-    const canPlayPublic = video.isPublic && (
+    const canPlayPublic = isPublicVideo && (
       Boolean(requesterId) || isValidPublicPlaybackToken(playbackToken, video.id)
     )
 

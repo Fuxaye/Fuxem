@@ -452,7 +452,7 @@ export default function SearchPage() {
 
               <div className="flex flex-wrap items-center gap-2">
                 <Link
-                  href={ROUTES.MESSAGESS}
+                  href={ROUTES.MESSAGES}
                   title="Open your inbox"
                   className="text-sm font-medium text-stone-300 underline decoration-white/25 underline-offset-4 transition hover:text-white hover:decoration-white"
                 >
@@ -894,7 +894,7 @@ export default function SearchPage() {
 
                     <div className="mt-4 grid grid-cols-3 gap-2">
                       <Link
-                        href={`${ROUTES.MESSAGESS}/${member.id}`}
+                        href={`${ROUTES.MESSAGES}/${member.id}`}
                         title={`Preview chat with ${member.displayName}`}
                         className="rounded-xl border border-white/20 bg-white/[0.05] px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-stone-100 transition hover:border-white/35 hover:bg-white/[0.08]"
                         aria-label={`Message ${member.displayName}`}

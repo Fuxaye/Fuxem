@@ -45,13 +45,16 @@ async function getRequester(request: NextRequest) {
     return null
   }
 
-  return prisma.user.findUnique({
+  const requester = await prisma.user.findUnique({
     where: { id: userId },
     select: {
       id: true,
       role: true,
+      status: true,
     },
   })
+
+  return requester?.status === 'active' ? requester : null
 }
 
 function canManageVideo(requester: { id: string; role: string }, ownerId: string): boolean {
@@ -79,6 +82,13 @@ export async function PATCH(
       select: {
         id: true,
         userId: true,
+        isPublic: true,
+        user: {
+          select: {
+            role: true,
+            status: true,
+          },
+        },
       },
     })
 
@@ -101,6 +111,19 @@ export async function PATCH(
     const nextVideoUrl = normalizeOptionalString(body.videoUrl)
     const nextThumbnailUrl = normalizeOptionalString(body.thumbnailUrl)
     const nextIsPublic = typeof body.isPublic === 'boolean' ? body.isPublic : undefined
+    const ownershipCertified = body.ownershipCertified === true
+
+    if (
+      nextIsPublic === true &&
+      (existing.user.role !== 'MODEL_VERIFIED' ||
+        existing.user.status !== 'active' ||
+        (!existing.isPublic && !ownershipCertified))
+    ) {
+      return NextResponse.json(
+        { error: 'Active verified model ownership certification is required for public videos.' },
+        { status: 403 }
+      )
+    }
 
     const video = await prisma.video.update({
       where: { id },

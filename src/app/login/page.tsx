@@ -5,8 +5,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-import { HelpPopover } from '@/components/ui/help-popover'
 import LegalLinks from '@/app/_components/legal-links'
+import { HelpPopover } from '@/components/ui/help-popover'
 import { MESSAGES, ROUTES } from '@/lib/constants'
 
 const CP = "Copperplate, 'Copperplate Gothic Light', fantasy"
@@ -22,7 +22,7 @@ function ErrorMsg({ msg }: { msg: string }) {
 function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const returnTo = searchParams.get('returnTo') || ROUTES.ME_PROFILE
+  const returnTo = searchParams.get('returnTo') || ROUTES.DASHBOARD
   const urlError = searchParams.get('error') || ''
   const verified = searchParams.get('verified') === '1'
 
@@ -156,14 +156,6 @@ function LoginContent() {
           >
             Members Only
           </h1>
-          <div className="mt-3">
-            <Link
-              href={ROUTES.HELP}
-              className="rounded-full border border-sky-300/30 bg-sky-400/12 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-sky-100 transition hover:bg-sky-300/18"
-            >
-              Need help?
-            </Link>
-          </div>
         </div>
 
         {stage === 'pin' ? (
@@ -225,11 +217,6 @@ function LoginContent() {
             <p className="text-center text-[9px] uppercase tracking-[0.2em] text-stone-600" style={{ fontFamily: CP }}>
               <Link href={ROUTES.WELCOME} className="hover:text-stone-400 transition-colors">
                 ← back
-              </Link>
-            </p>
-            <p className="text-center text-[9px] uppercase tracking-[0.2em] text-stone-600" style={{ fontFamily: CP }}>
-              <Link href={ROUTES.HELP} className="hover:text-stone-400 transition-colors">
-                help center
               </Link>
             </p>
             <LegalLinks

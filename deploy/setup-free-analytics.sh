@@ -18,6 +18,7 @@ HTPASSWD_FILE="/etc/nginx/.htpasswd_fuxem_analytics"
 GOACCESS_CONF="/etc/goaccess/fuxem.conf"
 CRON_FILE="/etc/cron.d/fuxem-goaccess"
 SNIPPET_FILE="/etc/nginx/snippets/fuxem-analytics.conf"
+SNIPPET_INCLUDE="include ${SNIPPET_FILE};"
 
 if [[ -z "${DOMAIN}" ]]; then
   echo "Usage: sudo bash deploy/setup-free-analytics.sh <domain> [analytics-username] [nginx-site-path] [nginx-access-log]"
@@ -41,7 +42,28 @@ apt install -y goaccess apache2-utils
 
 echo "Preparing analytics directory..."
 mkdir -p "${ANALYTICS_DIR}"
+mkdir -p "$(dirname "${SNIPPET_FILE}")"
 chown -R www-data:www-data "${ANALYTICS_DIR}"
+
+cat > "${SNIPPET_FILE}" <<EOF
+# fuxem analytics snippet
+location /analytics/ {
+  alias /var/www/analytics/;
+  index index.html;
+  auth_basic "Restricted Analytics";
+  auth_basic_user_file /etc/nginx/.htpasswd_fuxem_analytics;
+}
+
+location /analytics/ws {
+  proxy_pass http://127.0.0.1:7890;
+  proxy_http_version 1.1;
+  proxy_set_header Upgrade \$http_upgrade;
+  proxy_set_header Connection "upgrade";
+  proxy_set_header Host \$host;
+  auth_basic "Restricted Analytics";
+  auth_basic_user_file /etc/nginx/.htpasswd_fuxem_analytics;
+}
+EOF
 
 if [[ ! -f "${HTPASSWD_FILE}" ]]; then
   echo "Creating auth user (${USERNAME}). You will be prompted for a password."
@@ -58,35 +80,36 @@ log-format COMBINED
 output ${ANALYTICS_DIR}/index.html
 EOF
 
-if ! grep -q "fuxem_analytics_location" "${NGINX_SITE}"; then
-  echo "Inserting analytics location block into ${NGINX_SITE}..."
-  # Insert before the last closing } in the file (server block close)
-  python3 - "${NGINX_SITE}" <<'PYEOF'
+if ! grep -qF "${SNIPPET_INCLUDE}" "${NGINX_SITE}"; then
+  echo "Including analytics snippet in ${NGINX_SITE}..."
+  python3 - "${NGINX_SITE}" "${SNIPPET_INCLUDE}" <<'PYEOF'
 import sys
+
 path = sys.argv[1]
-block = """
-    # fuxem_analytics_location
-    location /analytics/ {
-        alias /var/www/analytics/;
-        index index.html;
-        auth_basic "Restricted Analytics";
-        auth_basic_user_file /etc/nginx/.htpasswd_fuxem_analytics;
-    }
-"""
-with open(path, "r") as f:
-    content = f.read()
-# Find last closing brace at start of line (server block end)
-idx = content.rfind("\n}")
+include_line = sys.argv[2]
+
+with open(path, 'r') as f:
+  content = f.read()
+
+if include_line in content:
+  print('Snippet include already present.')
+  sys.exit(0)
+
+idx = content.rfind('\n}')
 if idx == -1:
-    print("ERROR: could not find server block closing brace")
-    sys.exit(1)
-content = content[:idx] + block + content[idx:]
-with open(path, "w") as f:
-    f.write(content)
-print("Done.")
+  print('ERROR: could not find server block closing brace')
+  sys.exit(1)
+
+insertion = f"\n    {include_line}\n"
+content = content[:idx] + insertion + content[idx:]
+
+with open(path, 'w') as f:
+  f.write(content)
+
+print('Done.')
 PYEOF
 else
-  echo "Analytics location block already present, skipping."
+  echo "Analytics snippet already included, skipping."
 fi
 
 echo "Validating Nginx config..."

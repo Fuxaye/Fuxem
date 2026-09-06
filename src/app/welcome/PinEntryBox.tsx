@@ -7,17 +7,16 @@ import { ROUTES } from '@/lib/constants'
 
 const CP = "Copperplate, 'Copperplate Gothic Light', fantasy"
 
-/** 3×3 dot grid — universally recognised as a PIN/keypad symbol */
 function KeypadIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-8 w-8" fill="currentColor" aria-hidden="true">
-      <circle cx="5"  cy="5"  r="1.5" />
-      <circle cx="12" cy="5"  r="1.5" />
-      <circle cx="19" cy="5"  r="1.5" />
-      <circle cx="5"  cy="12" r="1.5" />
+    <svg viewBox="0 0 24 24" className="h-9 w-9" fill="currentColor" aria-hidden="true">
+      <circle cx="5" cy="5" r="1.5" />
+      <circle cx="12" cy="5" r="1.5" />
+      <circle cx="19" cy="5" r="1.5" />
+      <circle cx="5" cy="12" r="1.5" />
       <circle cx="12" cy="12" r="1.5" />
       <circle cx="19" cy="12" r="1.5" />
-      <circle cx="5"  cy="19" r="1.5" />
+      <circle cx="5" cy="19" r="1.5" />
       <circle cx="12" cy="19" r="1.5" />
       <circle cx="19" cy="19" r="1.5" />
     </svg>
@@ -26,7 +25,7 @@ function KeypadIcon() {
 
 export default function PinEntryBox() {
   const router = useRouter()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
   const [pin, setPin] = useState('')
   const [error, setError] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading'>('idle')
@@ -80,6 +79,19 @@ export default function PinEntryBox() {
       return
     }
 
+    if (code === '8888') {
+      try {
+        sessionStorage.setItem('fuxem_pending_public_access', code)
+      } catch {
+        // ignore storage errors and proceed
+      }
+    }
+
+    if (code === '8888') {
+      router.push(ROUTES.PUBLIC_MEDIA)
+      return
+    }
+
     if (code === '9999' || code === '3333') {
       setError('')
 
@@ -99,10 +111,20 @@ export default function PinEntryBox() {
         }
 
         if (data.promptNametag) {
+          try {
+            sessionStorage.setItem('fuxem_pending_public_access', code)
+          } catch {
+            // ignore storage errors and proceed
+          }
           router.push(`${ROUTES.ME_PROFILE}?prompt=nametag`)
           return
         }
 
+        try {
+          sessionStorage.setItem('fuxem_pending_public_access', code)
+        } catch {
+          // ignore storage errors and proceed
+        }
         router.push(data.returnTo || ROUTES.DASHBOARD)
         return
       } catch {
@@ -155,17 +177,12 @@ export default function PinEntryBox() {
     setError('')
   }
 
-  function toggleOpen() {
-    setOpen((prev) => {
-      const next = !prev
-      if (next) {
-        setTimeout(() => inputRef.current?.focus(), 50)
-      }
-      if (!next) {
-        setError('')
-      }
-      return next
-    })
+  function togglePanel() {
+    setOpen((previousOpen) => !previousOpen)
+    setError('')
+    if (!open) {
+      setTimeout(() => inputRef.current?.focus(), 50)
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -177,8 +194,6 @@ export default function PinEntryBox() {
     <div
       ref={containerRef}
       className="relative flex flex-col items-center"
-      onMouseEnter={openPanel}
-      onMouseLeave={closePanel}
       onFocusCapture={openPanel}
       onBlurCapture={(event) => {
         const nextTarget = event.relatedTarget as Node | null
@@ -202,6 +217,7 @@ export default function PinEntryBox() {
           className="fixed inset-x-2 bottom-2 z-30 rounded-3xl border border-white/20 bg-black/90 p-4 shadow-[0_16px_44px_rgba(0,0,0,0.6)] backdrop-blur-md sm:absolute sm:left-1/2 sm:top-full sm:mt-2 sm:w-64 sm:-translate-x-1/2 sm:rounded-2xl"
         >
           <label
+            htmlFor="access-code-input"
             className="mb-1 block text-center text-[10px] uppercase tracking-[0.24em] text-stone-100"
             style={{ fontFamily: CP }}
           >
@@ -231,17 +247,19 @@ export default function PinEntryBox() {
 
           <input
             ref={inputRef}
+            id="access-code-input"
             type="password"
             inputMode="numeric"
             autoComplete="off"
             maxLength={4}
+            placeholder="Enter access code"
             value={pin}
             onChange={(e) => {
               setPin(e.target.value.replace(/\D/g, '').slice(0, 4))
               if (error) setError('')
             }}
-            className="sr-only"
-            aria-label="PIN input"
+            className="mb-3 w-full rounded-lg border border-white/25 bg-white/10 px-3 py-2.5 text-center text-base tracking-[0.3em] text-white outline-none placeholder:tracking-normal placeholder:text-stone-500 focus:border-sky-300/80 focus:ring-2 focus:ring-sky-300/30"
+            aria-label="Access code"
           />
 
           <div className="grid grid-cols-3 gap-2">
@@ -305,12 +323,14 @@ export default function PinEntryBox() {
 
       <button
         type="button"
-        aria-label="Open PIN entry"
-        onClick={toggleOpen}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-black/30 text-white/50 backdrop-blur-sm transition hover:border-white/40 hover:text-white/80 active:scale-95 focus-visible:outline-none"
+        aria-label={open ? 'Close PIN entry' : 'Open PIN entry'}
+        aria-expanded={open}
+        onClick={togglePanel}
+        className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-white/30 bg-black/45 text-white/70 shadow-[0_0_0_rgba(56,189,248,0)] backdrop-blur-md transition-all duration-200 hover:border-sky-300/80 hover:bg-white/20 hover:text-white hover:shadow-[0_0_28px_rgba(125,211,252,0.75)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70"
       >
         <KeypadIcon />
       </button>
+
     </div>
   )
 }

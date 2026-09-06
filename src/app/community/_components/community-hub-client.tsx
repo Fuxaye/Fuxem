@@ -43,13 +43,13 @@ export default function CommunityHubClient() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="rounded-3xl border border-border/60 bg-card/60 p-6 backdrop-blur-md md:p-8"
+          className="ui-shell-panel p-6 md:p-8"
         >
-          <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Welcome to</p>
-          <h1 className="mt-3 text-4xl font-semibold text-foreground md:text-5xl">
+          <p className="text-xs uppercase tracking-[0.24em] text-text-muted">Welcome to</p>
+          <h1 className="mt-3 text-4xl font-semibold text-text-primary md:text-5xl">
             Community Hub
           </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-[#cfc9eb] md:text-base">
             Connect with verified members, discover events, and explore exclusive content in one place.
           </p>
         </motion.section>
@@ -66,21 +66,21 @@ export default function CommunityHubClient() {
                 whileHover={{ y: -6 }}
               >
                 <Link href={module.href} className="block h-full">
-                  <Card className="h-full border-border/60 bg-card/65 transition-colors hover:border-primary/40">
+                  <Card className="h-full border-border-subtle bg-bg-card/80 transition-colors hover:border-border-strong">
                     <CardHeader className="space-y-4">
-                      <div className="inline-flex w-fit rounded-xl border border-border/80 bg-background/50 p-3 text-primary">
+                      <div className="inline-flex w-fit rounded-xl border border-border-subtle bg-bg-surface p-3 text-[#9B7BFF]">
                         <Icon className="h-6 w-6" />
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between gap-2">
-                          <CardTitle className="text-xl">{module.title}</CardTitle>
-                          <Badge variant="secondary">{module.badge}</Badge>
+                          <CardTitle className="text-xl text-text-primary">{module.title}</CardTitle>
+                          <Badge variant="secondary" className="border border-border-subtle bg-bg-surface text-text-primary">{module.badge}</Badge>
                         </div>
-                        <CardDescription>{module.description}</CardDescription>
+                        <CardDescription className="text-text-muted">{module.description}</CardDescription>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex items-center justify-end text-sm text-muted-foreground">
+                      <div className="flex items-center justify-end text-sm text-text-muted">
                         Open module
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </div>
@@ -97,21 +97,21 @@ export default function CommunityHubClient() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.15 }}
         >
-          <Card className="border-border/60 bg-card/60">
+          <Card className="border-border-subtle bg-bg-card/80">
             <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-text-primary">Recent Activity</CardTitle>
+              <CardDescription className="text-text-muted">
                 Quick snapshot of what is moving in the community this week.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-xl border border-border/70 bg-background/45 p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Members Joined</p>
-                <p className="mt-2 text-3xl font-semibold">42</p>
+              <div className="rounded-xl border border-border-subtle bg-bg-surface p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-text-muted">Members Joined</p>
+                <p className="mt-2 text-3xl font-semibold text-text-primary">42</p>
               </div>
-              <div className="rounded-xl border border-border/70 bg-background/45 p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Events This Month</p>
-                <p className="mt-2 text-3xl font-semibold">9</p>
+              <div className="rounded-xl border border-border-subtle bg-bg-surface p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-text-muted">Events This Month</p>
+                <p className="mt-2 text-3xl font-semibold text-text-primary">9</p>
               </div>
             </CardContent>
           </Card>

@@ -77,6 +77,9 @@ model User {
   reviewedReports Report[] @relation("ReportsReviewed")
   adminAuditEvents AdminAuditLog[] @relation("AdminAuditActor")
 
+  // Dashboard
+  canAccessDashboard Boolean @default(false)
+
   // Account Status
   status         String   @default("active") // active, suspended, deleted
   isPremium      Boolean  @default(false)

@@ -25,6 +25,7 @@ import type {
   MemberSearchFilters,
   MemberSearchResponse,
   ProfileOptionsResponse,
+  PublicVideoListResponse,
   SafetySummaryResponse,
   MemberProfileResponse,
   MemberSettingsResponse,
@@ -41,10 +42,31 @@ import type {
   UserIdAvailabilityResponse,
 } from '@/lib/types'
 
-export async function apiCall(
+function parseJsonResponse(body: string): { data: unknown; isJson: boolean } {
+  if (!body.trim()) {
+    return { data: null, isJson: false }
+  }
+
+  try {
+    return { data: JSON.parse(body) as unknown, isJson: true }
+  } catch {
+    return { data: null, isJson: false }
+  }
+}
+
+function getApiErrorMessage(payload: unknown): string | null {
+  if (!payload || typeof payload !== 'object' || !('error' in payload)) {
+    return null
+  }
+
+  const error = payload.error
+  return typeof error === 'string' && error.trim() ? error : null
+}
+
+export async function apiCall<T = any>(
   endpoint: string,
   options: RequestInit = {}
-) {
+): Promise<T> {
   const url = `${process.env.NEXT_PUBLIC_API_URL || ''}${endpoint}`
 
   const response = await fetch(url, {
@@ -55,12 +77,20 @@ export async function apiCall(
     ...options,
   })
 
+  const body = await response.text()
+  const parsed = parseJsonResponse(body)
+
   if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.error || 'API call failed')
+    throw new Error(
+      getApiErrorMessage(parsed.data) || `API call failed (${response.status})`
+    )
   }
 
-  return response.json()
+  if (!parsed.isJson) {
+    throw new Error(`Unexpected response from ${endpoint}. Please try again.`)
+  }
+
+  return parsed.data as T
 }
 
 export async function onboard(data: {
@@ -343,7 +373,7 @@ export async function decideFriendRequest(
   })
 }
 
-export async function fetchPublicVideos(signal?: AbortSignal): Promise<VideoListResponse> {
+export async function fetchPublicVideos(signal?: AbortSignal): Promise<PublicVideoListResponse> {
   return apiCall('/api/videos', {
     method: 'GET',
     signal,

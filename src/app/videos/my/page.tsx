@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { Red_Hat_Text } from 'next/font/google'
 
 import MemberLayout from '@/app/_layouts/member-layout'
 import { AUTH_COOKIE_NAME, ROUTES, getUserGroupProfileRoute } from '@/lib/constants'
@@ -9,6 +10,12 @@ import prisma from '@/lib/prisma'
 import type { AuthTokenPayload } from '@/lib/types'
 
 import MyVideosClient from './_components/my-videos-client'
+
+const redHatText = Red_Hat_Text({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-display',
+})
 
 function getTokenPayload(token: string): AuthTokenPayload | null {
   const jwtSecret = process.env.JWT_SECRET
@@ -88,7 +95,9 @@ export default async function MyVideosPage() {
         accountCategoryLabel,
       }}
     >
-      <MyVideosClient />
+      <div className={redHatText.variable}>
+        <MyVideosClient />
+      </div>
     </MemberLayout>
   )
 }

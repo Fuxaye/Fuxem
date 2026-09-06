@@ -231,6 +231,7 @@ export default function MemberLayout({ children, initialUser, isBurner }: Member
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
   const pathname = usePathname()
+  const safePathname = pathname ?? ROUTES.DASHBOARD
   const router = useRouter()
 
   // Close sidebar when route changes
@@ -239,13 +240,13 @@ export default function MemberLayout({ children, initialUser, isBurner }: Member
   }, [pathname])
 
   const menuItems = getMemberMenuItems(initialUser?.profileHref)
-  const currentPageTitle = pathname.startsWith('/usergroup/') && pathname.endsWith('/main')
+  const currentPageTitle = safePathname.startsWith('/usergroup/') && safePathname.endsWith('/main')
     ? 'Member Home'
-    : pathname.startsWith('/usergroup/') && pathname.endsWith('/profile')
+    : safePathname.startsWith('/usergroup/') && safePathname.endsWith('/profile')
       ? 'My Profile'
-      : pathname === ROUTES.PUBLIC_STREAM || pathname === ROUTES.VIDEOS || pathname === ROUTES.MY_VIDEOS
+      : safePathname === ROUTES.PUBLIC_STREAM || safePathname === ROUTES.VIDEOS || safePathname === ROUTES.MY_VIDEOS
         ? 'Videos'
-      : menuItems.find(item => item.href === pathname)?.label || 'Dashboard'
+      : menuItems.find((item) => item.href === safePathname)?.label || 'Dashboard'
 
   async function handleSignOut() {
     if (isSigningOut) return
@@ -263,10 +264,9 @@ export default function MemberLayout({ children, initialUser, isBurner }: Member
   }
 
   return (
-    <div className="min-h-screen relative bg-bg-base dark:bg-bg-base">
-      {/* Background Image with Overlay */}
+    <div className="relative min-h-screen overflow-hidden bg-bg-base text-text-primary">
       <div
-        className="fixed inset-0 z-0 opacity-20"
+        className="pointer-events-none fixed inset-0 z-0 opacity-20"
         style={{
           backgroundImage: 'url(/3.jpg)',
           backgroundSize: 'cover',
@@ -275,31 +275,30 @@ export default function MemberLayout({ children, initialUser, isBurner }: Member
         }}
       />
 
-      {/* Dark Overlay */}
-      <div className="fixed inset-0 z-0 bg-gradient-to-br from-bg-base/80 via-bg-base/60 to-bg-base/80" />
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_15%_10%,rgba(124,92,252,0.16),transparent_42%),radial-gradient(circle_at_85%_20%,rgba(61,207,207,0.14),transparent_40%),linear-gradient(160deg,rgba(13,12,20,0.97)_0%,rgba(13,12,20,0.9)_48%,rgba(19,17,30,0.95)_100%)]" />
 
-      <div className="relative z-10 flex h-screen overflow-hidden">
-        {/* Desktop Sidebar */}
-        <motion.div
-          initial={false}
-          animate={{ width: sidebarOpen ? 280 : 280 }}
-          className="hidden md:flex flex-col fixed left-0 top-0 h-full bg-bg-surface/50 backdrop-blur-md border-r border-border-subtle shadow-xl"
-        >
-          <div className="p-6 border-b border-border-subtle">
+      <div className="relative z-10 flex min-h-screen">
+        <aside className="hidden w-[280px] shrink-0 border-r border-border-subtle bg-[linear-gradient(180deg,rgba(19,17,30,0.96),rgba(13,12,20,0.92))] backdrop-blur-xl md:flex md:flex-col">
+          <div className="border-b border-border-subtle p-6">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-burgundy-500 to-champagne flex items-center justify-center text-white font-bold text-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#7C5CFC] to-[#9B7BFF] text-sm font-bold text-white shadow-[0_8px_22px_rgba(124,92,252,0.45)]">
                 {initialUser ? getInitials(initialUser.displayName || initialUser.firstName) : 'U'}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-text-primary truncate">
+                <p className="truncate text-sm font-semibold text-text-primary">
                   {initialUser?.displayName || initialUser?.firstName || 'User'}
                 </p>
-                <p className="text-xs text-text-muted truncate">
+                <p className="truncate text-xs text-text-muted">
                   @{initialUser?.username || 'username'}
                 </p>
+                {initialUser?.accountCategoryLabel ? (
+                  <p className="mt-2 text-[10px] uppercase tracking-[0.16em] text-[#9C95BC]">
+                    {initialUser.accountCategoryLabel}
+                  </p>
+                ) : null}
                 {isBurner && (
                   <div className="mt-2">
-                    <span className="inline-flex items-center rounded-full bg-amber-500/20 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                    <span className="inline-flex items-center rounded-full border border-amber-400/35 bg-amber-400/15 px-2.5 py-0.5 text-xs font-medium text-amber-200">
                       Read-only Mode
                     </span>
                   </div>
@@ -308,14 +307,14 @@ export default function MemberLayout({ children, initialUser, isBurner }: Member
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-2">
+          <div className="flex-1 space-y-2 overflow-y-auto p-4">
             <SidebarNav profileHref={initialUser?.profileHref} />
           </div>
 
-          <div className="p-4 border-t border-border-subtle">
+          <div className="border-t border-border-subtle p-4">
             <Button
               variant="outline"
-              className="w-full text-xs"
+              className="w-full border-border-subtle bg-bg-card text-xs text-text-primary hover:bg-bg-surface"
               size="sm"
               onClick={handleSignOut}
               disabled={isSigningOut}
@@ -323,16 +322,15 @@ export default function MemberLayout({ children, initialUser, isBurner }: Member
               {isSigningOut ? 'Signing Out...' : 'Sign Out'}
             </Button>
           </div>
-        </motion.div>
+        </aside>
 
-        {/* Main Content */}
-        <div className="flex-1 md:ml-[280px] flex flex-col overflow-hidden">
-          {/* Mobile Header */}
-          <div className="md:hidden fixed top-0 left-0 right-0 z-20 bg-bg-surface/50 backdrop-blur-md border-b border-border-subtle px-4 py-4 flex items-center justify-between">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <div className="fixed left-0 right-0 top-0 z-20 flex items-center justify-between border-b border-border-subtle bg-[linear-gradient(180deg,rgba(19,17,30,0.96),rgba(13,12,20,0.92))] px-4 py-4 backdrop-blur-xl md:hidden">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="text-text-primary hover:bg-bg-surface"
             >
               {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
@@ -340,7 +338,6 @@ export default function MemberLayout({ children, initialUser, isBurner }: Member
             <div className="w-10" />
           </div>
 
-          {/* Mobile Sidebar Overlay */}
           <AnimatePresence>
             {sidebarOpen && (
               <>
@@ -355,11 +352,11 @@ export default function MemberLayout({ children, initialUser, isBurner }: Member
                   initial={{ x: -280 }}
                   animate={{ x: 0 }}
                   exit={{ x: -280 }}
-                  className="md:hidden fixed left-0 top-0 h-full w-80 bg-bg-surface/95 backdrop-blur-md z-40 flex flex-col shadow-xl"
+                  className="fixed left-0 top-0 z-40 flex h-full w-80 flex-col border-r border-border-subtle bg-[linear-gradient(180deg,rgba(19,17,30,0.98),rgba(13,12,20,0.96))] shadow-[0_24px_70px_rgba(0,0,0,0.34)] backdrop-blur-xl md:hidden"
                 >
-                  <div className="p-6 border-b border-border-subtle">
+                  <div className="border-b border-border-subtle p-6">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-burgundy-500 to-champagne flex items-center justify-center text-white font-bold text-sm">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#7C5CFC] to-[#9B7BFF] text-sm font-bold text-white shadow-[0_8px_22px_rgba(124,92,252,0.45)]">
                         {initialUser ? getInitials(initialUser.displayName || initialUser.firstName) : 'U'}
                       </div>
                       <div className="flex-1">
@@ -373,14 +370,14 @@ export default function MemberLayout({ children, initialUser, isBurner }: Member
                     </div>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                  <div className="flex-1 space-y-2 overflow-y-auto p-4">
                     <SidebarNav profileHref={initialUser?.profileHref} />
                   </div>
 
-                  <div className="p-4 border-t border-border-subtle">
+                  <div className="border-t border-border-subtle p-4">
                     <Button
                       variant="outline"
-                      className="w-full text-xs"
+                      className="w-full border-border-subtle bg-bg-card text-xs text-text-primary hover:bg-bg-surface"
                       size="sm"
                       onClick={handleSignOut}
                       disabled={isSigningOut}
@@ -393,7 +390,6 @@ export default function MemberLayout({ children, initialUser, isBurner }: Member
             )}
           </AnimatePresence>
 
-          {/* Scrollable Content Area */}
           <div className="flex-1 overflow-y-auto pt-16 md:pt-0">
             <motion.div
               initial={{ opacity: 0, y: 10 }}

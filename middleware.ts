@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-import { AUTH_COOKIE_NAME, ROUTES, SESSION_MODE_COOKIE_NAME } from '@/lib/constants'
+import { AUTH_COOKIE_NAME, ROUTES, SESSION_MODE_COOKIE_NAME } from './src/lib/constants'
 
 // Public website and compliance surfaces
 const PUBLIC_PATHS = [
@@ -110,6 +110,10 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith('/api/auth/')) {
+    return NextResponse.next()
+  }
+
+  if (pathname.startsWith('/_vercel/')) {
     return NextResponse.next()
   }
 

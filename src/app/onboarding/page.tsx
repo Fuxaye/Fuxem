@@ -7,11 +7,13 @@ import { AUTH_COOKIE_NAME, ROUTES, SESSION_MODE_DEFAULT_MEMBER } from '@/lib/con
 import prisma from '@/lib/prisma'
 import type { AuthTokenPayload } from '@/lib/types'
 
+type OnboardingSearchParams = {
+  passcode?: string
+  quickJoin?: string
+}
+
 type OnboardingPageProps = {
-  searchParams?: {
-    passcode?: string
-    quickJoin?: string
-  }
+  searchParams?: Promise<OnboardingSearchParams>
 }
 
 function getTokenPayload(token: string): AuthTokenPayload | null {
@@ -28,6 +30,7 @@ function getTokenPayload(token: string): AuthTokenPayload | null {
 }
 
 export default async function OnboardingPage({ searchParams }: OnboardingPageProps) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined
   const cookieStore = await cookies()
   const token = cookieStore.get(AUTH_COOKIE_NAME)?.value
 
@@ -55,8 +58,8 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
     }
   }
 
-  const passcode = searchParams?.passcode ?? ''
-  const quickJoin = searchParams?.quickJoin === '1'
+  const passcode = resolvedSearchParams?.passcode ?? ''
+  const quickJoin = resolvedSearchParams?.quickJoin === '1'
 
   return <OnboardingClient passcode={passcode} quickJoin={quickJoin} />
 }

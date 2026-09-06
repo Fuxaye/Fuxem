@@ -86,7 +86,7 @@ async function parseLoginInput(request: NextRequest): Promise<ParsedLoginInput> 
     const body = await request.json()
     return {
       code: (body.passcode || body.pin || '').trim(),
-      identifier: (body.identifier || body.email || body.username || '').trim().toLowerCase(),
+      identifier: (body.identifier || body.email || body.username || '').trim(),
       secret: (body.secret || body.password || '').trim(),
       psk: (body.psk || '').trim(),
       returnTo: getSafeReturnTo(body.returnTo || null),
@@ -97,7 +97,7 @@ async function parseLoginInput(request: NextRequest): Promise<ParsedLoginInput> 
   const formData = await request.formData()
   return {
     code: String(formData.get('passcode') || '').trim(),
-    identifier: String(formData.get('identifier') || formData.get('email') || formData.get('username') || '').trim().toLowerCase(),
+    identifier: String(formData.get('identifier') || formData.get('email') || formData.get('username') || '').trim(),
     secret: String(formData.get('secret') || formData.get('password') || '').trim(),
     psk: String(formData.get('psk') || '').trim(),
     returnTo: getSafeReturnTo(String(formData.get('returnTo') || ROUTES.ME_PROFILE)),
@@ -392,6 +392,10 @@ export async function POST(request: NextRequest) {
       return withSessionCookies(response, token, SESSION_MODE_MEMBER, BURNER_TOKEN_MAX_AGE_SECONDS)
     }
 
+    if (normalizedCode !== NEW_MEMBER_PIN) {
+      return buildErrorResponse(request, requestKind, MESSAGES.ENTRY_PIN_REQUIRED, 401)
+    }
+
     if (!identifier) {
       return buildErrorResponse(request, requestKind, MESSAGES.LOGIN_USER_ID_REQUIRED, 400)
     }
@@ -400,20 +404,24 @@ export async function POST(request: NextRequest) {
       return buildErrorResponse(request, requestKind, MESSAGES.LOGIN_PASSWORD_REQUIRED, 400)
     }
 
-    const userByUsername = await prisma.user.findUnique({
-      where: { username: identifier },
+    const normalizedIdentifier = identifier.toLowerCase()
+
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: { equals: normalizedIdentifier, mode: 'insensitive' } },
+          { email: { equals: normalizedIdentifier, mode: 'insensitive' } },
+          { accountName: { equals: identifier, mode: 'insensitive' } },
+        ],
+      },
       select: loginUserSelect,
     })
 
-    const userByEmail = userByUsername
-      ? null
-      : await prisma.user.findUnique({
-          where: { email: identifier },
-          select: loginUserSelect,
-        })
-
-    const user = userByUsername ?? userByEmail
-    const matchedField: LoginMatchField = userByUsername ? 'username' : userByEmail ? 'email' : null
+    const matchedField: LoginMatchField = user
+      ? user.email?.toLowerCase() === normalizedIdentifier
+        ? 'email'
+        : 'username'
+      : null
 
     logCredentialMatch({
       identifier,
