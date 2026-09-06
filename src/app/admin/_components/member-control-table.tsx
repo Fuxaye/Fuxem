@@ -106,6 +106,40 @@ export default function MemberControlTable({ initialMembers, actorRole }: Member
     }
   }
 
+  async function toggleEmailVerified(member: AdminMemberRow) {
+    if (!canManageMember(member.role) || member.status === 'deleted') {
+      return
+    }
+
+    const nextValue = !member.emailVerified
+    setPending((current) => ({ ...current, [member.id]: true }))
+    setErrorMessage(null)
+
+    try {
+      const response = await fetch(`/api/admin/members/${encodeURIComponent(member.id)}/verification`, {
+        method: 'PATCH',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ emailVerified: nextValue }),
+      })
+
+      const payload = (await response.json().catch(() => null)) as { error?: string } | null
+
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Failed to update verification')
+      }
+
+      setMembers((current) =>
+        current.map((item) => (item.id === member.id ? { ...item, emailVerified: nextValue } : item))
+      )
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to update verification')
+    } finally {
+      setPending((current) => ({ ...current, [member.id]: false }))
+    }
+  }
+
   return (
     <section className="rounded-2xl border border-white/15 bg-black/30 p-4 shadow-xl backdrop-blur">
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -159,7 +193,19 @@ export default function MemberControlTable({ initialMembers, actorRole }: Member
                     </span>
                   </td>
                   <td className="px-2 py-3 align-top text-xs text-stone-300">
-                    <p>Verified: {member.emailVerified ? 'yes' : 'no'}</p>
+                    <div className="flex items-center gap-2">
+                      <span>Verified: {member.emailVerified ? 'yes' : 'no'}</span>
+                      {!member.emailVerified ? (
+                        <button
+                          type="button"
+                          disabled={locked || isPending}
+                          onClick={() => toggleEmailVerified(member)}
+                          className="rounded-lg border border-emerald-300/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-emerald-100 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          Approve
+                        </button>
+                      ) : null}
+                    </div>
                     <p>Msgs: {member.messagesSent}</p>
                     <p>Videos: {member.videosPosted}</p>
                   </td>
