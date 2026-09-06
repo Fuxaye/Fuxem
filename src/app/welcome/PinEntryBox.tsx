@@ -258,7 +258,7 @@ export default function PinEntryBox() {
               setPin(e.target.value.replace(/\D/g, '').slice(0, 4))
               if (error) setError('')
             }}
-            className="mb-3 w-full rounded-lg border border-white/25 bg-white/10 px-3 py-2.5 text-center text-base tracking-[0.3em] text-white outline-none placeholder:tracking-normal placeholder:text-stone-500 focus:border-sky-300/80 focus:ring-2 focus:ring-sky-300/30"
+            className="sr-only"
             aria-label="Access code"
           />
 
@@ -326,7 +326,7 @@ export default function PinEntryBox() {
         aria-label={open ? 'Close PIN entry' : 'Open PIN entry'}
         aria-expanded={open}
         onClick={togglePanel}
-        className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-white/30 bg-black/45 text-white/70 shadow-[0_0_0_rgba(56,189,248,0)] backdrop-blur-md transition-all duration-200 hover:border-sky-300/80 hover:bg-white/20 hover:text-white hover:shadow-[0_0_28px_rgba(125,211,252,0.75)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-black/30 text-white/50 backdrop-blur-sm transition hover:border-white/40 hover:text-white/80 active:scale-95 focus-visible:outline-none"
       >
         <KeypadIcon />
       </button>
