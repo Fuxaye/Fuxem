@@ -2,26 +2,36 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 import { ROUTES } from '@/lib/constants'
 
 const STORAGE_KEY = 'fuxem_age_verified'
+const PENDING_PUBLIC_ACCESS_KEY = 'fuxem_pending_public_access'
+const AGE_GATED_ACCESS_CODES = new Set(['8888', '9999', '3333'])
 
 export default function AgeGate() {
+  const pathname = usePathname()
   const [show, setShow] = useState(false)
 
   useEffect(() => {
-    try {
-      const verified = sessionStorage.getItem(STORAGE_KEY)
-      if (!verified) setShow(true)
-    } catch {
+    if (typeof window === 'undefined') return
+
+    const verified = sessionStorage.getItem(STORAGE_KEY)
+    const pendingAccess = sessionStorage.getItem(PENDING_PUBLIC_ACCESS_KEY)
+
+    if (AGE_GATED_ACCESS_CODES.has(pendingAccess || '') && !verified) {
       setShow(true)
+      return
     }
-  }, [])
+
+    setShow(false)
+  }, [pathname])
 
   function handleAccept() {
     try {
       sessionStorage.setItem(STORAGE_KEY, '1')
+      sessionStorage.removeItem(PENDING_PUBLIC_ACCESS_KEY)
     } catch {
       // sessionStorage unavailable — hide anyway for this render
     }
@@ -29,6 +39,11 @@ export default function AgeGate() {
   }
 
   function handleDecline() {
+    try {
+      sessionStorage.removeItem(PENDING_PUBLIC_ACCESS_KEY)
+    } catch {
+      // ignore storage errors
+    }
     window.location.href = 'https://www.google.com'
   }
 

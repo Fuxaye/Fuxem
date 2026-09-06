@@ -388,6 +388,37 @@ export interface VideoFeedItem {
   }
 }
 
+export interface PublicMediaVideo {
+  id: string
+  title: string
+  description: string | null
+  playbackUrl: string | null
+  thumbnailUrl: string | null
+  creator: string
+  tags: string[]
+}
+
+export interface PublicVideoFeedItem {
+  id: string
+  title: string
+  description: string | null
+  thumbnailUrl: string | null
+  playbackUrl: string | null
+  publicAliasPath?: string | null
+  isPublic: true
+  views: number
+  createdAt: string
+  user: {
+    id: string
+    username: string
+    displayName: string
+  }
+}
+
+export interface PublicVideoListResponse {
+  videos: PublicVideoFeedItem[]
+}
+
 export interface VideoListResponse {
   videos: VideoFeedItem[]
   isPremium?: boolean
@@ -416,6 +447,7 @@ export interface UpdateVideoInput {
   videoUrl?: string
   thumbnailUrl?: string
   isPublic?: boolean
+  ownershipCertified?: boolean
 }
 
 export interface ChatRoomTokenResponse {

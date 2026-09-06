@@ -3,6 +3,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUserId } from '@/lib/auth'
 import { MESSAGES } from '@/lib/constants'
 import prisma from '@/lib/prisma'
+import { createPublicPlaybackUrl } from '@/lib/public-media-server'
+
+const PUBLIC_VIDEO_WHERE = {
+  isPublic: true,
+  user: {
+    role: 'MODEL_VERIFIED' as const,
+    status: 'active',
+  },
+}
 
 function parseMineFlag(value: string | null): boolean {
   if (!value) {
@@ -99,27 +108,33 @@ export async function GET(request: NextRequest) {
     }
 
     const videos = await prisma.video.findMany({
-      where: { isPublic: true },
+      where: PUBLIC_VIDEO_WHERE,
       orderBy: { createdAt: 'desc' },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        thumbnailUrl: true,
+        isPublic: true,
+        views: true,
+        createdAt: true,
         user: {
           select: {
             id: true,
             accountName: true,
             username: true,
             displayName: true,
-            profile: {
-              select: {
-                avatarUrl: true,
-              },
-            },
           },
         },
       },
     })
 
     const normalized = videos.map((video) => ({
-      ...video,
+      id: video.id,
+      title: video.title,
+      description: video.description,
+      thumbnailUrl: video.thumbnailUrl,
+      playbackUrl: createPublicPlaybackUrl(video.id),
       publicAliasPath: buildPublicAliasPath({
         accountName: video.user.accountName,
         username: video.user.username,
@@ -127,11 +142,13 @@ export async function GET(request: NextRequest) {
         videoId: video.id,
         isPublic: video.isPublic,
       }),
+      isPublic: true as const,
+      views: video.views,
+      createdAt: video.createdAt,
       user: {
         id: video.user.id,
         username: video.user.username,
         displayName: video.user.displayName,
-        avatarUrl: video.user.profile?.avatarUrl ?? null,
       },
     }))
 
@@ -156,6 +173,7 @@ export async function POST(request: NextRequest) {
         accountName: true,
         username: true,
         role: true,
+        status: true,
       },
     })
 
@@ -163,8 +181,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: MESSAGES.LOGIN_INVALID }, { status: 404 })
     }
 
-    // Posting videos is restricted to verified model accounts.
-    if (user.role !== 'MODEL_VERIFIED') {
+    // Posting videos is restricted to active verified model accounts.
+    if (user.role !== 'MODEL_VERIFIED' || user.status !== 'active') {
       return NextResponse.json({ error: MESSAGES.VIDEO_FORBIDDEN }, { status: 403 })
     }
 

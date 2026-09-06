@@ -8,6 +8,7 @@ import VideoPlayerShell from './_components/video-player-shell'
 
 import { AUTH_COOKIE_NAME, ROUTES, VIDEO_PLAYBACK_TOKEN_MAX_AGE_SECONDS } from '@/lib/constants'
 import prisma from '@/lib/prisma'
+import { isEligiblePublicVideo } from '@/lib/public-video-policy'
 import type { AuthTokenPayload } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
@@ -74,6 +75,8 @@ export default async function VideoViewerPage({ params }: { params: { id: string
           username: true,
           displayName: true,
           isPremium: true,
+          role: true,
+          status: true,
           profile: {
             select: {
               avatarUrl: true,
@@ -89,10 +92,11 @@ export default async function VideoViewerPage({ params }: { params: { id: string
   }
 
   const memberId = await getLoggedInMemberId()
-  const canView = video.isPublic || Boolean(memberId)
-  const publicPlaybackToken = video.isPublic ? createPublicPlaybackToken(video.id) : null
+  const isPublicVideo = isEligiblePublicVideo(video)
+  const canView = isPublicVideo || Boolean(memberId)
+  const publicPlaybackToken = isPublicVideo ? createPublicPlaybackToken(video.id) : null
 
-  const playbackUrl = video.isPublic
+  const playbackUrl = isPublicVideo
     ? `/api/videos/${encodeURIComponent(video.id)}/play?token=${encodeURIComponent(publicPlaybackToken || '')}`
     : `/api/videos/${encodeURIComponent(video.id)}/play`
 
@@ -138,7 +142,7 @@ export default async function VideoViewerPage({ params }: { params: { id: string
             <span className="rounded-lg border border-white/15 bg-black/35 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-amber-100">
               @{uploaderLabel}
             </span>
-            {!video.isPublic && (
+            {!isPublicVideo && (
               <span className="rounded-lg border border-white/15 bg-black/35 px-2.5 py-1 text-xs uppercase tracking-[0.14em] text-stone-300">
                 Members-Only
               </span>
@@ -147,16 +151,16 @@ export default async function VideoViewerPage({ params }: { params: { id: string
 
           <VideoInteractions
             videoId={video.id}
-            isPublic={video.isPublic}
+            isPublic={isPublicVideo}
             initialViews={video.views}
-            showPublicBadge={video.isPublic && video.user.isPremium}
+            showPublicBadge={isPublicVideo && video.user.isPremium}
           />
         </header>
 
         <VideoPlayerShell
           src={playbackUrl}
           poster={video.thumbnailUrl || undefined}
-          isPublic={video.isPublic}
+          isPublic={isPublicVideo}
         />
       </div>
     </div>

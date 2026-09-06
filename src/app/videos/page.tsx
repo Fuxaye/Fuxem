@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from 'react'
 import TopQuickNav from '@/app/_components/top-quick-nav'
 import { fetchPublicVideos, incrementVideoViews } from '@/lib/api'
 import { ROUTES } from '@/lib/constants'
-import type { VideoFeedItem } from '@/lib/types'
+import type { PublicVideoFeedItem } from '@/lib/types'
 
 function formatRelativeDate(value: string): string {
   const date = new Date(value)
@@ -26,7 +26,7 @@ function formatRelativeDate(value: string): string {
 }
 
 export default function VideosPage() {
-  const [videos, setVideos] = useState<VideoFeedItem[]>([])
+  const [videos, setVideos] = useState<PublicVideoFeedItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -158,18 +158,24 @@ export default function VideosPage() {
 
                   <div className="mt-4 flex items-center justify-between gap-3">
                     <span className="text-xs uppercase tracking-[0.12em] text-stone-400">{video.views} views</span>
-                    <a
-                      href={video.videoUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      title={`Preview ${video.title}`}
-                      onClick={() => {
-                        void handleOpenVideo(video.id)
-                      }}
-                      className="rounded-lg border border-white/20 bg-white/[0.05] px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-stone-100 transition hover:border-white/35 hover:bg-white/[0.1]"
-                    >
-                      Watch
-                    </a>
+                    {video.playbackUrl ? (
+                      <a
+                        href={video.playbackUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={`Preview ${video.title}`}
+                        onClick={() => {
+                          void handleOpenVideo(video.id)
+                        }}
+                        className="rounded-lg border border-white/20 bg-white/[0.05] px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-stone-100 transition hover:border-white/35 hover:bg-white/[0.1]"
+                      >
+                        Watch
+                      </a>
+                    ) : (
+                      <span className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs uppercase tracking-[0.14em] text-stone-500">
+                        Unavailable
+                      </span>
+                    )}
                   </div>
                 </div>
               </article>

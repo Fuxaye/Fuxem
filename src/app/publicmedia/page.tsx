@@ -1,12 +1,25 @@
 import type { Metadata } from 'next'
+
 import PublicMediaClient from './publicmedia-client'
+import { getPublicMediaPageData } from '@/lib/public-media-server'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export const metadata: Metadata = {
-  title: 'Public Media | fuxem',
+  title: 'Public Screening | fuxem',
   description:
-    'Public media showcase for compliance and ad network review. Stream-ready cards for Bunny links.',
+    'Public videos shared by verified Fuxem members. Watch freely; member interactions require an account.',
 }
 
-export default function PublicMediaPage() {
-  return <PublicMediaClient />
+export default async function PublicMediaPage() {
+  const { videos, isAuthenticated } = await getPublicMediaPageData()
+
+  return (
+    <PublicMediaClient
+      videos={videos}
+      isAuthenticated={isAuthenticated}
+      initialError={null}
+    />
+  )
 }
