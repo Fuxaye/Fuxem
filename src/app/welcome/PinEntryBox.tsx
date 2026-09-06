@@ -230,6 +230,10 @@ export default function PinEntryBox() {
             ENTER ACCESS CODE
           </p>
 
+          <p className="mb-2 text-center text-[7px] tracking-[0.1em] text-red-500/70 select-none" style={{ fontFamily: CP }}>
+            no pin = 0000
+          </p>
+
           <div className="mb-3 grid grid-cols-4 gap-2">
             {Array.from({ length: 4 }).map((_, index) => {
               const hasDigit = index < pin.length
@@ -252,13 +256,12 @@ export default function PinEntryBox() {
             inputMode="numeric"
             autoComplete="off"
             maxLength={4}
-            placeholder="Enter access code"
             value={pin}
             onChange={(e) => {
               setPin(e.target.value.replace(/\D/g, '').slice(0, 4))
               if (error) setError('')
             }}
-            className="sr-only"
+            className="mb-3 w-full rounded-lg border border-white/25 bg-white/10 px-3 py-2 text-center text-base tracking-[0.3em] text-white outline-none placeholder:tracking-normal placeholder:text-stone-600 focus:border-sky-300/80 focus:ring-2 focus:ring-sky-300/30"
             aria-label="Access code"
           />
 
