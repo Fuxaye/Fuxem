@@ -79,6 +79,11 @@ export default function PinEntryBox() {
       return
     }
 
+    if (code === '7777') {
+      window.location.href = ROUTES.AUTH_GITHUB
+      return
+    }
+
     if (code === '8888') {
       try {
         sessionStorage.setItem('fuxem_pending_public_access', code)

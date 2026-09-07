@@ -168,3 +168,86 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unable to save media.' }, { status: 500 })
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const actorId = await getAuthenticatedUserId(request)
+
+    if (!actorId) {
+      return NextResponse.json({ error: 'Authentication required.' }, { status: 401 })
+    }
+
+    const actor = await prisma.user.findUnique({
+      where: { id: actorId },
+      select: { id: true, role: true },
+    })
+
+    if (!actor) {
+      return NextResponse.json({ error: 'Actor not found.' }, { status: 404 })
+    }
+
+    const body = (await request.json().catch(() => null)) as
+      | {
+          kind?: MediaKind
+          url?: string
+          targetUserId?: string
+        }
+      | null
+
+    if (!body || !body.url || (body.kind !== 'photo' && body.kind !== 'video')) {
+      return NextResponse.json({ error: 'Valid media type and URL are required.' }, { status: 400 })
+    }
+
+    const targetUserId = body.targetUserId || actor.id
+
+    if (targetUserId !== actor.id && actor.role !== 'ADMIN' && actor.role !== 'SUPREME_ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const profile = await prisma.profile.findUnique({
+      where: { userId: targetUserId },
+      select: { id: true, photoUrls: true, videoUrls: true },
+    })
+
+    if (!profile) {
+      return NextResponse.json({ error: 'Profile not found.' }, { status: 404 })
+    }
+
+    const nextPhotos =
+      body.kind === 'photo' ? profile.photoUrls.filter((u) => u !== body.url) : profile.photoUrls
+    const nextVideos =
+      body.kind === 'video' ? profile.videoUrls.filter((u) => u !== body.url) : profile.videoUrls
+
+    await prisma.profile.update({
+      where: { userId: targetUserId },
+      data: {
+        photoUrls: nextPhotos,
+        videoUrls: nextVideos,
+      },
+    })
+
+    if (actor.role === 'ADMIN' || actor.role === 'SUPREME_ADMIN') {
+      await prisma.adminAuditLog.create({
+        data: {
+          actorUserId: actor.id,
+          targetUserId: targetUserId !== actor.id ? targetUserId : null,
+          action: 'MEDIA_DELETED',
+          reason: `Removed ${body.kind}: ${body.url}`,
+        },
+      })
+    }
+
+    return NextResponse.json({
+      success: true,
+      counts: {
+        photos: nextPhotos.length,
+        videos: nextVideos.length,
+      },
+      photoUrls: nextPhotos,
+      videoUrls: nextVideos,
+    })
+  } catch (error) {
+    console.error('Failed to delete media:', error)
+    return NextResponse.json({ error: 'Unable to delete media.' }, { status: 500 })
+  }
+}

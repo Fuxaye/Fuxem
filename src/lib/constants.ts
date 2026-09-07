@@ -250,6 +250,7 @@ export const QUICK_JOIN_PIN = '0000'
 export const QUICK_JOIN_QUERY_PARAM = 'quickJoin'
 export const BURNER_PIN = '9999'
 export const PRESHARED_KEY_PIN = '3333'
+export const DEV_PIN = '7777'
 
 export const PASSCODE_LENGTH = 6
 export const PERSONAL_CODE_LENGTH = 8
@@ -325,6 +326,8 @@ export const ROUTES = {
   COMMUNITY_CLASSIFIEDS: '/community/classifieds',
   ADMIN: '/admin',
   ADMIN_TOOLS: '/admin/tools',
+  AUTH_GITHUB: '/api/auth/github',
+  AUTH_GITHUB_CALLBACK: '/api/auth/github/callback',
 }
 
 export function getUserGroupMainRoute(userId: string) {
