@@ -317,6 +317,21 @@ export default function PinEntryBox() {
               {error}
             </p>
           )}
+
+          <button
+            type="submit"
+            aria-label="Submit"
+            disabled={status === 'loading'}
+            className="mt-3 flex h-11 w-full items-center justify-center rounded-lg border border-white/20 bg-white/10 transition hover:bg-white/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {status === 'loading' ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-stone-300 border-t-transparent" />
+            ) : (
+              <svg viewBox="0 0 24 24" className="h-4 w-4 text-stone-200" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            )}
+          </button>
         </form>
       )}
 
