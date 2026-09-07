@@ -317,15 +317,6 @@ export default function PinEntryBox() {
               {error}
             </p>
           )}
-
-          <button
-            type="submit"
-            disabled={status === 'loading'}
-            className="mt-3 w-full rounded-lg border border-white/20 bg-white/10 py-3 text-xs uppercase tracking-[0.24em] text-stone-100 transition hover:bg-white/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-            style={{ fontFamily: CP }}
-          >
-            {status === 'loading' ? 'Checking...' : 'Enter'}
-          </button>
         </form>
       )}
 
