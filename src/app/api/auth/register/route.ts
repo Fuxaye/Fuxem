@@ -38,9 +38,9 @@ function parseDob(value: unknown): Date | null {
 
 function calculateAge(dateOfBirth: Date): number {
   const now = new Date()
-  let age = now.getFullYear() - dateOfBirth.getUTCFullYear()
-  const monthDifference = now.getMonth() - dateOfBirth.getUTCMonth()
-  const dayDifference = now.getDate() - dateOfBirth.getUTCDate()
+  let age = now.getUTCFullYear() - dateOfBirth.getUTCFullYear()
+  const monthDifference = now.getUTCMonth() - dateOfBirth.getUTCMonth()
+  const dayDifference = now.getUTCDate() - dateOfBirth.getUTCDate()
 
   if (monthDifference < 0 || (monthDifference === 0 && dayDifference < 0)) {
     age -= 1
@@ -148,10 +148,11 @@ export async function POST(request: NextRequest) {
       requiresEmailVerification = false
       successMessage = MESSAGES.ACCOUNT_CREATED
     } else {
-      // Check if SMTP is configured
+      // Require the same complete SMTP configuration used by the mail helper.
       const smtpConfigured =
         process.env.SMTP_HOST && process.env.SMTP_HOST.trim() !== '' &&
-        process.env.SMTP_USER && process.env.SMTP_USER.trim() !== ''
+        process.env.SMTP_USER && process.env.SMTP_USER.trim() !== '' &&
+        process.env.SMTP_PASS && process.env.SMTP_PASS.trim() !== ''
 
       if (smtpConfigured) {
         // SMTP configured: send verification email and require verification
