@@ -1,7 +1,6 @@
 'use client'
 
-import { FormEvent, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { type FormEvent, useRef, useState } from 'react'
 
 import { NEW_MEMBER_PIN, QUICK_JOIN_PIN, ROUTES } from '@/lib/constants'
 
@@ -24,7 +23,6 @@ function KeypadIcon() {
 }
 
 export default function PinEntryBox() {
-  const router = useRouter()
   const [open, setOpen] = useState(true)
   const [pin, setPin] = useState('')
   const [error, setError] = useState<'empty' | 'invalid' | null>(null)
@@ -33,30 +31,40 @@ export default function PinEntryBox() {
   function playKeyFeedback() {
     if (typeof window === 'undefined') return
 
-    if ('vibrate' in navigator) {
-      navigator.vibrate(12)
+    try {
+      if ('vibrate' in navigator) {
+        navigator.vibrate(12)
+      }
+
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+      if (!AudioContextClass) return
+
+      const context = new AudioContextClass()
+      const oscillator = context.createOscillator()
+      const gainNode = context.createGain()
+
+      oscillator.type = 'sine'
+      oscillator.frequency.value = 760
+      gainNode.gain.value = 0.025
+
+      oscillator.connect(gainNode)
+      gainNode.connect(context.destination)
+
+      oscillator.start()
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.05)
+      oscillator.stop(context.currentTime + 0.05)
+      oscillator.onended = () => {
+        void context.close()
+      }
+    } catch {
+      // Audio/haptics are optional; never block PIN entry.
     }
+  }
 
-    const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-    if (!AudioContextClass) return
-
-    const context = new AudioContextClass()
-    const oscillator = context.createOscillator()
-    const gainNode = context.createGain()
-
-    oscillator.type = 'sine'
-    oscillator.frequency.value = 760
-    gainNode.gain.value = 0.025
-
-    oscillator.connect(gainNode)
-    gainNode.connect(context.destination)
-
-    oscillator.start()
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.05)
-    oscillator.stop(context.currentTime + 0.05)
-    oscillator.onended = () => {
-      void context.close()
-    }
+  function goTo(path: string) {
+    window.location.assign(path)
   }
 
   function submitPin(code: string) {
@@ -66,12 +74,12 @@ export default function PinEntryBox() {
     }
 
     if (code === QUICK_JOIN_PIN) {
-      router.push(ROUTES.SIGNUP)
+      goTo(ROUTES.SIGNUP)
       return
     }
 
     if (code === NEW_MEMBER_PIN) {
-      router.push(ROUTES.LOGIN)
+      goTo(ROUTES.LOGIN)
       return
     }
 
@@ -125,6 +133,7 @@ export default function PinEntryBox() {
       {open && (
         <form
           onSubmit={handleSubmit}
+          noValidate
           className="absolute left-1/2 top-full z-30 mt-2 max-h-[calc(100dvh-5rem)] w-[min(16rem,calc(100vw-1rem))] -translate-x-1/2 overflow-y-auto rounded-2xl border border-white/20 bg-black/90 p-4 shadow-[0_16px_44px_rgba(0,0,0,0.6)] backdrop-blur-md sm:max-h-none sm:w-64 sm:overflow-visible"
         >
           <label
@@ -234,7 +243,8 @@ export default function PinEntryBox() {
           )}
 
           <button
-            type="submit"
+            type="button"
+            onClick={() => submitPin(pin)}
             className="mt-3 w-full rounded-lg border border-white/25 bg-white/15 py-2.5 text-[10px] uppercase tracking-[0.22em] text-stone-100 transition hover:bg-white/25 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/40"
             style={{ fontFamily: CP }}
           >
