@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useState } from 'react'
+import { FormEvent, Suspense, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -13,7 +13,7 @@ function safeReturnTo(value: string | null) {
   return value
 }
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
   const params = useSearchParams()
   const [identifier, setIdentifier] = useState('')
@@ -121,5 +121,21 @@ export default function LoginPage() {
         </section>
       </div>
     </main>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="relative isolate min-h-screen bg-[#020617] text-slate-100">
+          <div className="mx-auto flex min-h-screen max-w-xl items-center justify-center px-4">
+            <p className="text-sm text-stone-400">Loading…</p>
+          </div>
+        </main>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   )
 }
