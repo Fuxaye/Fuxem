@@ -16,6 +16,7 @@ const PUBLIC_PATHS = [
   '/forgot',
   '/reset',
   '/signup',
+  '/nocode',
   '/pin-reveal',
   '/default',
 ]

@@ -392,8 +392,15 @@ export async function POST(request: NextRequest) {
       return withSessionCookies(response, token, SESSION_MODE_MEMBER, BURNER_TOKEN_MAX_AGE_SECONDS)
     }
 
-    if (normalizedCode !== NEW_MEMBER_PIN) {
+    // Member credentials: from /login (no PIN) or after entering 5555 on /welcome.
+    if (identifier && secret) {
+      if (code && normalizedCode !== NEW_MEMBER_PIN) {
+        return buildErrorResponse(request, requestKind, MESSAGES.ENTRY_PIN_REQUIRED, 401)
+      }
+    } else if (normalizedCode !== NEW_MEMBER_PIN) {
       return buildErrorResponse(request, requestKind, MESSAGES.ENTRY_PIN_REQUIRED, 401)
+    } else {
+      return buildErrorResponse(request, requestKind, MESSAGES.LOGIN_CREDENTIALS_REQUIRED, 400)
     }
 
     if (!identifier) {

@@ -68,13 +68,7 @@ cp .env.example .env
 # Edit .env with production values.
 ```
 
-### 4. Build the app
-
-```bash
-npm run build:vps
-```
-
-### 5. Configure PostgreSQL
+### 4. Configure PostgreSQL
 
 If you are using self-hosted Postgres:
 
@@ -89,10 +83,18 @@ GRANT ALL PRIVILEGES ON DATABASE fuxem TO fuxem_user;
 
 Update `DATABASE_URL` in `.env` with the database connection string.
 
-### 6. Run Prisma migrations
+### 5. Run Prisma migrations
 
 ```bash
 npm run db:deploy
+```
+
+### 6. Build the app
+
+Run migrations before building so the production build can safely access the current schema.
+
+```bash
+npm run build:vps
 ```
 
 ### 7. Configure Nginx
@@ -143,6 +145,34 @@ sudo pm2 startup
 - Visit `https://fuxem.com`
 - Sign up, log in, and verify `/camera` renders
 - Upload a photo/video and check it persists
+
+## Updating an existing server
+
+After the first bootstrap, use the update script (does **not** overwrite `.env`):
+
+```bash
+cd /var/www/fuxem
+bash deploy/update.sh
+```
+
+This runs `git pull`, `npm install`, `npm run db:deploy`, `npm run build:vps`, and `pm2 restart fuxem`.
+
+## Automatic deploy (GitHub Actions)
+
+Pushes to `main` run tests, then SSH to the VPS and execute `deploy/update.sh`.
+
+Add these repository secrets in GitHub (**Settings → Secrets and variables → Actions**):
+
+| Secret | Example |
+|--------|---------|
+| `VPS_HOST` | `172.233.52.53` or your server hostname |
+| `VPS_USER` | `root` or your deploy user |
+| `VPS_SSH_KEY` | Private key that can SSH in and run updates in `/var/www/fuxem` |
+| `VPS_SSH_PORT` | `22` (optional; omit if default) |
+
+The deploy user needs read/write on `/var/www/fuxem` and permission to run `pm2 restart fuxem`.
+
+You can also trigger a deploy manually: **Actions → Deploy production → Run workflow**.
 
 ## Notes
 

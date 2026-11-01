@@ -301,7 +301,7 @@ export const ROUTES = {
   LOGIN: '/login',
   FORGOT: '/forgot',
   RESET: '/reset',
-  SIGNUP: '/signup',
+  SIGNUP: '/nocode',
   PIN_REVEAL: '/pin-reveal',
   PSK: '/psk',
   PROFILE: '/profile',

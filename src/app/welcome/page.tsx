@@ -60,7 +60,7 @@ export default function Welcome() {
       </Link>
 
       <Link
-        href="/signup"
+        href="/nocode"
         className="ui-button-primary absolute right-6 top-6 z-30 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.2em]"
       >
         Sign Up

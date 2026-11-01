@@ -1,321 +1,125 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { FormEvent, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-
-import LegalLinks from '@/app/_components/legal-links'
-import { HelpPopover } from '@/components/ui/help-popover'
-import { MESSAGES, ROUTES } from '@/lib/constants'
+import { NEW_MEMBER_PIN, ROUTES } from '@/lib/constants'
 
 const CP = "Copperplate, 'Copperplate Gothic Light', fantasy"
 
-function ErrorMsg({ msg }: { msg: string }) {
-  return (
-    <p className="rounded-xl border border-rose-500/25 bg-rose-950/50 px-3 py-2 text-center text-[11px] text-rose-300">
-      {msg}
-    </p>
-  )
+function safeReturnTo(value: string | null) {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return ROUTES.DASHBOARD
+  return value
 }
 
-function LoginContent() {
+export default function LoginPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const returnTo = searchParams.get('returnTo') || ROUTES.DASHBOARD
-  const urlError = searchParams.get('error') || ''
-  const verified = searchParams.get('verified') === '1'
-
-  const [entryPin, setEntryPin] = useState('')
+  const params = useSearchParams()
   const [identifier, setIdentifier] = useState('')
-  const [secret, setSecret] = useState('')
-  const [stage, setStage] = useState<'pin' | 'credentials'>('pin')
-  const [error, setError] = useState(urlError)
-  const [status, setStatus] = useState<'idle' | 'loading'>('idle')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
 
-  async function handlePinSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    const code = entryPin.trim()
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault()
+    setPending(true)
+    setError('')
 
-    if (!code) {
-      setError(MESSAGES.ENTRY_PIN_REQUIRED)
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        identifier: identifier.trim(),
+        password,
+        passcode: NEW_MEMBER_PIN,
+      }),
+    })
+
+    setPending(false)
+    if (!response.ok) {
+      setError('Invalid credentials')
       return
     }
 
-    setStatus('loading')
-    setError('')
-
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ passcode: code, returnTo }),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error || MESSAGES.LOGIN_INVALID)
-        setStatus('idle')
-        return
-      }
-
-      if (data.requiresCredentials || code === '5555') {
-        setStage('credentials')
-        setStatus('idle')
-        setError('')
-        return
-      }
-
-      if (data.requiresPsk || code === '3333') {
-        router.push(data.returnTo || `${ROUTES.PSK}?returnTo=${encodeURIComponent(returnTo)}`)
-        return
-      }
-
-      if (data.promptNametag) {
-        router.push(`${ROUTES.ME_PROFILE}?prompt=nametag`)
-        return
-      }
-
-      router.push(data.returnTo || ROUTES.ME_PROFILE)
-    } catch {
-      setError('Network error. Please try again.')
-      setStatus('idle')
-    }
-  }
-
-  async function handleCredentialSubmit(e: React.FormEvent) {
-    e.preventDefault()
-
-    if (!identifier.trim() || !secret.trim()) {
-      setError(MESSAGES.LOGIN_CREDENTIALS_REQUIRED)
-      return
-    }
-
-    setStatus('loading')
-    setError('')
-
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          passcode: '5555',
-          identifier: identifier.trim().toLowerCase(),
-          secret: secret.trim(),
-          returnTo,
-        }),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error || MESSAGES.LOGIN_INVALID)
-        setStatus('idle')
-        return
-      }
-
-      if (data.promptNametag) {
-        router.push(`${ROUTES.ME_PROFILE}?prompt=nametag`)
-        return
-      }
-
-      router.push(data.returnTo || ROUTES.ME_PROFILE)
-    } catch {
-      setError('Network error. Please try again.')
-      setStatus('idle')
-    }
+    router.push(safeReturnTo(params.get('returnTo')))
+    router.refresh()
   }
 
   return (
-    <div className="relative isolate min-h-screen overflow-hidden bg-[#020617] text-slate-100">
-      <div className="absolute inset-0">
-        <Image
-          src="/welcome2.jpg"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-          style={{ objectPosition: 'center 18%', filter: 'saturate(1.08) contrast(1.02)' }}
-        />
-      </div>
+    <main className="relative isolate min-h-screen text-slate-100">
+      <Image
+        src="/welcome2.png"
+        alt=""
+        fill
+        priority
+        sizes="100vw"
+        className="pointer-events-none absolute inset-0 z-0 object-cover"
+        style={{ objectPosition: 'center 18%' }}
+      />
       <div
-        className="absolute inset-0"
+        className="pointer-events-none absolute inset-0 z-0"
         style={{
           background:
             'radial-gradient(circle at 18% 16%, rgba(56,189,248,0.18), transparent 42%), radial-gradient(circle at 82% 14%, rgba(244,114,182,0.15), transparent 36%), linear-gradient(180deg, rgba(2,6,23,0.72), rgba(2,6,23,0.97))',
         }}
       />
 
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center gap-8 px-4">
-        <div className="text-center">
-          <h1
-            className="text-2xl tracking-[0.22em] text-stone-100/85 select-none"
-            style={{ fontFamily: CP }}
-          >
-            Members Only
-          </h1>
-        </div>
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-xl flex-col px-4 py-6">
+        <header className="flex items-center justify-between">
+          <Link href="/welcome" className="text-sm font-semibold tracking-[0.12em] text-stone-100">
+            FUXEM
+          </Link>
+          <Link href="/welcome" className="text-sm text-stone-300 underline-offset-4 hover:underline">
+            Back
+          </Link>
+        </header>
 
-        {stage === 'pin' ? (
-          <form
-            onSubmit={handlePinSubmit}
-            className="w-full max-w-xs space-y-5 rounded-2xl border border-white/10 bg-black/45 p-6 shadow-[0_20px_55px_rgba(0,0,0,0.55)] backdrop-blur-md"
-          >
-            {verified && (
-              <p className="rounded-xl border border-emerald-300/35 bg-emerald-400/12 px-3 py-2 text-center text-[11px] text-emerald-100">
-                Email verified. Enter your access code to continue.
-              </p>
-            )}
-
-            <div>
-              <div className="mb-2 flex items-center justify-center gap-2">
-                <span
-                  className="text-center text-[8px] uppercase tracking-[0.28em] text-yellow-400"
-                  style={{ fontFamily: CP }}
-                >
-                  Access Code
-                </span>
-                <HelpPopover
-                  title="Access code"
-                  body="Enter your 4-digit access code first, then continue to credentials when prompted."
-                />
-              </div>
-              <input
-                type="password"
-                autoFocus
-                inputMode="numeric"
-                autoComplete="off"
-                maxLength={4}
-                value={entryPin}
-                onChange={(e) => {
-                  setEntryPin(e.target.value.replace(/\D/g, '').slice(0, 4))
-                  setError('')
-                }}
-                placeholder="0000"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 text-center text-2xl tracking-[0.4em] text-stone-100 outline-none placeholder:text-stone-700 focus:border-pink-400/40 focus:ring-1 focus:ring-pink-400/15 transition"
-                style={{ fontFamily: CP }}
-              />
-              <p className="mt-2 text-center text-[10px] tracking-wide text-stone-400" style={{ fontFamily: CP }}>
-                no pin = 0000
-            
-              </p>
-            </div>
-
-            {error && <ErrorMsg msg={error} />}
-
-            <button
-              type="submit"
-              disabled={status === 'loading'}
-              className="w-full rounded-full border border-pink-300/20 bg-gradient-to-r from-pink-600/90 to-rose-700/90 py-3 text-sm tracking-wide text-stone-100 transition hover:brightness-110 disabled:opacity-60 disabled:cursor-wait"
-              style={{ fontFamily: CP }}
-            >
-              {status === 'loading' ? 'checking…' : 'continue'}
-            </button>
-
-            <p className="text-center text-[9px] uppercase tracking-[0.2em] text-stone-600" style={{ fontFamily: CP }}>
-              <Link href={ROUTES.WELCOME} className="hover:text-stone-400 transition-colors">
-                ← back
-              </Link>
+        <section className="my-auto w-full rounded-2xl border border-white/8 bg-black/25 px-5 py-7 shadow-[0_12px_35px_rgba(0,0,0,0.4)] backdrop-blur-sm sm:px-9 sm:py-8">
+          <div className="mb-6 border-b border-white/10 pb-5 text-center">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-pink-200/80" style={{ fontFamily: CP }}>
+              Members only
             </p>
-            <LegalLinks
-              className="text-center text-[9px] uppercase tracking-[0.2em] text-stone-600"
-              linkClassName="text-stone-600 transition-colors hover:text-stone-400"
+            <h1 className="mt-2 text-xl tracking-[0.2em] text-stone-100" style={{ fontFamily: CP }}>
+              Log in
+            </h1>
+            <p className="mt-2 text-sm text-stone-400">You must be an adult.</p>
+          </div>
+
+          <form onSubmit={onSubmit} className="space-y-4">
+            <input
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-stone-100 outline-none placeholder:text-stone-500 transition focus:border-pink-400/40 focus:ring-1 focus:ring-pink-400/15"
+              placeholder="Email or user ID"
+              aria-label="Email or user ID"
+              autoComplete="username"
+              value={identifier}
+              onChange={(event) => setIdentifier(event.target.value)}
+              required
             />
-          </form>
-        ) : (
-          <form
-            onSubmit={handleCredentialSubmit}
-            className="w-full max-w-xs space-y-5 rounded-2xl border border-white/10 bg-black/45 p-6 shadow-[0_20px_55px_rgba(0,0,0,0.55)] backdrop-blur-md"
-          >
-            <p className="rounded-xl border border-sky-300/30 bg-sky-400/10 px-3 py-2 text-center text-[11px] text-sky-100">
-              Access code accepted. Log in with your user ID/email and password.
-            </p>
-
-            <div>
-              <span className="mb-2 block text-center text-[8px] uppercase tracking-[0.28em] text-sky-200" style={{ fontFamily: CP }}>
-                User ID or Email
-              </span>
-              <input
-                type="text"
-                autoComplete="username"
-                value={identifier}
-                onChange={(e) => {
-                  setIdentifier(e.target.value)
-                  setError('')
-                }}
-                placeholder="username or you@example.com"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center text-sm tracking-[0.03em] text-stone-100 outline-none placeholder:text-stone-500 focus:border-pink-400/40 focus:ring-1 focus:ring-pink-400/15 transition"
-                style={{ fontFamily: CP }}
-              />
-            </div>
-
-            <div>
-              <div className="mb-2 flex items-center justify-center gap-2">
-                <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-stone-100">
-                  Password
-                </span>
-              </div>
-              <input
-                type="password"
-                autoComplete="current-password"
-                value={secret}
-                onChange={(e) => {
-                  setSecret(e.target.value)
-                  setError('')
-                }}
-                placeholder="your password"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center text-sm tracking-[0.08em] text-stone-100 outline-none placeholder:text-stone-500 focus:border-pink-400/40 focus:ring-1 focus:ring-pink-400/15 transition"
-                style={{ fontFamily: CP }}
-              />
-            </div>
-
-            {error && <ErrorMsg msg={error} />}
-
-            <button
-              type="submit"
-              disabled={status === 'loading'}
-              className="w-full rounded-full border border-pink-300/20 bg-gradient-to-r from-pink-600/90 to-rose-700/90 py-3 text-sm tracking-wide text-stone-100 transition hover:brightness-110 disabled:opacity-60 disabled:cursor-wait"
-              style={{ fontFamily: CP }}
-            >
-              {status === 'loading' ? 'entering…' : 'log in'}
-            </button>
-
-            <p className="text-center text-[9px] uppercase tracking-[0.2em] text-stone-600" style={{ fontFamily: CP }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setStage('pin')
-                  setSecret('')
-                  setIdentifier('')
-                  setError('')
-                }}
-                className="hover:text-stone-400 transition-colors"
-              >
-                ← change code
-              </button>
-            </p>
-            <p className="text-center text-[9px] uppercase tracking-[0.2em] text-stone-600" style={{ fontFamily: CP }}>
-              <Link href={ROUTES.HELP} className="hover:text-stone-400 transition-colors">
-                help center
-              </Link>
-            </p>
-            <LegalLinks
-              className="text-center text-[9px] uppercase tracking-[0.2em] text-stone-600"
-              linkClassName="text-stone-600 transition-colors hover:text-stone-400"
+            <input
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-stone-100 outline-none placeholder:text-stone-500 transition focus:border-pink-400/40 focus:ring-1 focus:ring-pink-400/15"
+              placeholder="Password"
+              aria-label="Password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
             />
+            {error ? <p role="alert" className="text-sm text-rose-300">{error}</p> : null}
+            <button
+              className="w-full rounded-full border border-pink-300/20 bg-gradient-to-r from-pink-600/90 to-rose-700/90 py-3 text-sm tracking-wide text-stone-100 transition hover:brightness-110 disabled:cursor-wait disabled:opacity-70"
+              style={{ fontFamily: CP }}
+              disabled={pending}
+            >
+              {pending ? 'Signing in…' : 'Sign in'}
+            </button>
           </form>
-        )}
+          <Link className="mt-4 inline-block text-sm text-stone-300 underline-offset-4 hover:underline" href={ROUTES.FORGOT}>
+            Forgot password
+          </Link>
+        </section>
       </div>
-    </div>
-  )
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense>
-      <LoginContent />
-    </Suspense>
+    </main>
   )
 }

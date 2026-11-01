@@ -53,6 +53,16 @@ function isAtLeastMinimumAge(dateOfBirth: Date, minimumAge: number): boolean {
   return calculateAge(dateOfBirth) >= minimumAge
 }
 
+function isConfiguredValue(value: string | undefined): boolean {
+  if (!value?.trim()) {
+    return false
+  }
+
+  return !/^smtp\.(example\.com|your-domain\.com)$/i.test(value.trim()) &&
+    !/^(smtp-user|smtp-password|your-password)@?example\.com?$/i.test(value.trim()) &&
+    !/^your-(smtp-)?(user|password)/i.test(value.trim())
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -150,9 +160,9 @@ export async function POST(request: NextRequest) {
     } else {
       // Require the same complete SMTP configuration used by the mail helper.
       const smtpConfigured =
-        process.env.SMTP_HOST && process.env.SMTP_HOST.trim() !== '' &&
-        process.env.SMTP_USER && process.env.SMTP_USER.trim() !== '' &&
-        process.env.SMTP_PASS && process.env.SMTP_PASS.trim() !== ''
+        isConfiguredValue(process.env.SMTP_HOST) &&
+        isConfiguredValue(process.env.SMTP_USER) &&
+        isConfiguredValue(process.env.SMTP_PASS)
 
       if (smtpConfigured) {
         // SMTP configured: send verification email and require verification
@@ -229,6 +239,13 @@ export async function POST(request: NextRequest) {
     )
   } catch (error) {
     console.error('[register]', error)
+    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P1001') {
+      return NextResponse.json(
+        { error: 'Account creation is temporarily unavailable. Please try again later.' },
+        { status: 503 }
+      )
+    }
+
     return NextResponse.json({ error: MESSAGES.ERROR_GENERAL }, { status: 500 })
   }
 }

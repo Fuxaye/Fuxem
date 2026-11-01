@@ -71,11 +71,11 @@ NEXT_PUBLIC_API_URL="https://${DOMAIN}"
 APP_URL="https://${DOMAIN}"
 NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:-https://your-supabase-project.supabase.co}"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY:-your-supabase-anon-key}"
-SMTP_HOST="${SMTP_HOST:-smtp.example.com}"
+SMTP_HOST="${SMTP_HOST:-}"
 SMTP_PORT="${SMTP_PORT:-587}"
 SMTP_SECURE="${SMTP_SECURE:-false}"
-SMTP_USER="${SMTP_USER:-smtp-user@example.com}"
-SMTP_PASS="${SMTP_PASS:-smtp-password}"
+SMTP_USER="${SMTP_USER:-}"
+SMTP_PASS="${SMTP_PASS:-}"
 SMTP_FROM="${SMTP_FROM:-noreply@${DOMAIN}}"
 LIVEKIT_URL="${LIVEKIT_URL:-wss://your-livekit-host}"
 LIVEKIT_API_KEY="${LIVEKIT_API_KEY:-your-livekit-api-key}"
@@ -88,8 +88,8 @@ PORT="3000"
 EOF
 
 npm install
-npm run build:vps
 npx prisma migrate deploy
+npm run build:vps
 
 cat > /etc/nginx/sites-available/fuxem <<EOF
 server {

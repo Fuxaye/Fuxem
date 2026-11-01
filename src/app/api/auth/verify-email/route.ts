@@ -32,11 +32,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (!user.emailVerificationExpiresAt || user.emailVerificationExpiresAt < new Date()) {
-      return NextResponse.redirect(new URL('/signup?error=expired', request.url))
+      return NextResponse.redirect(new URL('/nocode?error=expired', request.url))
     }
 
     if (!user.firstName) {
-      return NextResponse.redirect(new URL('/signup?error=invalid_name', request.url))
+      return NextResponse.redirect(new URL('/nocode?error=invalid_name', request.url))
     }
 
     await prisma.user.update({

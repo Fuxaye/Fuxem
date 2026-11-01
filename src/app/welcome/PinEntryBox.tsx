@@ -1,9 +1,9 @@
 'use client'
 
-import { FormEvent, useEffect, useRef, useState } from 'react'
+import { FormEvent, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-import { ROUTES } from '@/lib/constants'
+import { NEW_MEMBER_PIN, QUICK_JOIN_PIN, ROUTES } from '@/lib/constants'
 
 const CP = "Copperplate, 'Copperplate Gothic Light', fantasy"
 
@@ -27,10 +27,8 @@ export default function PinEntryBox() {
   const router = useRouter()
   const [open, setOpen] = useState(true)
   const [pin, setPin] = useState('')
-  const [error, setError] = useState('')
-  const [status, setStatus] = useState<'idle' | 'loading'>('idle')
+  const [error, setError] = useState<'empty' | 'invalid' | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
 
   function playKeyFeedback() {
     if (typeof window === 'undefined') return
@@ -61,165 +59,73 @@ export default function PinEntryBox() {
     }
   }
 
-  async function submitPin(code: string) {
+  function submitPin(code: string) {
     if (!code) {
-      setError('Enter code')
+      setError('empty')
       return
     }
 
-    setStatus('loading')
-
-    if (code === '0000') {
+    if (code === QUICK_JOIN_PIN) {
       router.push(ROUTES.SIGNUP)
       return
     }
 
-    if (code === '5555') {
+    if (code === NEW_MEMBER_PIN) {
       router.push(ROUTES.LOGIN)
       return
     }
 
-    if (code === '7777') {
-      window.location.href = ROUTES.AUTH_GITHUB
-      return
-    }
-
-    if (code === '8888') {
-      try {
-        sessionStorage.setItem('fuxem_pending_public_access', code)
-      } catch {
-        // ignore storage errors and proceed
-      }
-    }
-
-    if (code === '8888') {
-      router.push(ROUTES.PUBLIC_MEDIA)
-      return
-    }
-
-    if (code === '9999' || code === '3333') {
-      setError('')
-
-      try {
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ passcode: code, returnTo: ROUTES.DASHBOARD }),
-        })
-
-        const data = await res.json()
-
-        if (!res.ok) {
-          setError(data.error || 'Invalid code')
-          setStatus('idle')
-          return
-        }
-
-        if (data.promptNametag) {
-          try {
-            sessionStorage.setItem('fuxem_pending_public_access', code)
-          } catch {
-            // ignore storage errors and proceed
-          }
-          router.push(`${ROUTES.ME_PROFILE}?prompt=nametag`)
-          return
-        }
-
-        try {
-          sessionStorage.setItem('fuxem_pending_public_access', code)
-        } catch {
-          // ignore storage errors and proceed
-        }
-        router.push(data.returnTo || ROUTES.DASHBOARD)
-        return
-      } catch {
-        setError('Unable to continue. Please try again.')
-        setStatus('idle')
-        return
-      }
-    }
-
-    setError('Invalid code')
-    setStatus('idle')
+    setError('invalid')
   }
-
-  useEffect(() => {
-    if (open && pin.length === 4 && status === 'idle') {
-      void submitPin(pin)
-    }
-  }, [open, pin, status])
 
   function appendDigit(digit: string) {
     setPin((previousPin) => {
-      if (previousPin.length >= 4 || status === 'loading') return previousPin
+      if (previousPin.length >= 4) return previousPin
       return `${previousPin}${digit}`
     })
     playKeyFeedback()
-    if (error) setError('')
+    if (error) setError(null)
   }
 
   function removeDigit() {
-    if (status === 'loading') return
     setPin((previousPin) => previousPin.slice(0, -1))
     playKeyFeedback()
-    if (error) setError('')
+    if (error) setError(null)
   }
 
   function clearPin() {
-    if (status === 'loading') return
     setPin('')
     playKeyFeedback()
-    if (error) setError('')
-  }
-
-  function openPanel() {
-    setOpen(true)
-    setTimeout(() => inputRef.current?.focus(), 50)
+    if (error) setError(null)
   }
 
   function closePanel() {
     setOpen(false)
-    setError('')
+    setError(null)
   }
 
   function togglePanel() {
-    setOpen((previousOpen) => !previousOpen)
-    setError('')
-    if (!open) {
-      setTimeout(() => inputRef.current?.focus(), 50)
+    if (open) {
+      closePanel()
+      return
     }
+
+    setOpen(true)
+    setError(null)
+    setTimeout(() => inputRef.current?.focus(), 50)
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    void submitPin(pin)
+    submitPin(pin)
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="relative flex flex-col items-center"
-      onFocusCapture={openPanel}
-      onBlurCapture={(event) => {
-        const nextTarget = event.relatedTarget as Node | null
-        if (!containerRef.current?.contains(nextTarget)) {
-          closePanel()
-        }
-      }}
-    >
-      {open && (
-        <button
-          type="button"
-          aria-label="Close PIN entry"
-          onClick={closePanel}
-          className="fixed inset-0 z-20 bg-black/60 sm:hidden"
-        />
-      )}
-
+    <div className="relative flex flex-col items-center">
       {open && (
         <form
           onSubmit={handleSubmit}
-          className="fixed inset-x-2 bottom-2 z-30 rounded-3xl border border-white/20 bg-black/90 p-4 shadow-[0_16px_44px_rgba(0,0,0,0.6)] backdrop-blur-md sm:absolute sm:left-1/2 sm:top-full sm:mt-2 sm:w-64 sm:-translate-x-1/2 sm:rounded-2xl"
+          className="absolute left-1/2 top-full z-30 mt-2 max-h-[calc(100dvh-5rem)] w-[min(16rem,calc(100vw-1rem))] -translate-x-1/2 overflow-y-auto rounded-2xl border border-white/20 bg-black/90 p-4 shadow-[0_16px_44px_rgba(0,0,0,0.6)] backdrop-blur-md sm:max-h-none sm:w-64 sm:overflow-visible"
         >
           <label
             htmlFor="access-code-input"
@@ -229,14 +135,10 @@ export default function PinEntryBox() {
             PIN
           </label>
           <p
-            className="mb-2 text-center text-[8px] tracking-[0.14em] text-red-400/80 select-none"
+            className="mb-3 text-center text-[8px] tracking-[0.14em] text-stone-300/90 select-none"
             style={{ fontFamily: CP }}
           >
             ENTER ACCESS CODE
-          </p>
-
-          <p className="mb-2 text-center text-[7px] tracking-[0.1em] text-red-500/70 select-none" style={{ fontFamily: CP }}>
-            no pin = 0000
           </p>
 
           <div className="mb-3 grid grid-cols-4 gap-2">
@@ -264,10 +166,12 @@ export default function PinEntryBox() {
             value={pin}
             onChange={(e) => {
               setPin(e.target.value.replace(/\D/g, '').slice(0, 4))
-              if (error) setError('')
+              if (error) setError(null)
             }}
             className="mb-3 w-full rounded-lg border border-white/25 bg-white/10 px-3 py-2 text-center text-base tracking-[0.3em] text-white outline-none placeholder:tracking-normal placeholder:text-stone-600 focus:border-sky-300/80 focus:ring-2 focus:ring-sky-300/30"
             aria-label="Access code"
+            aria-invalid={error !== null}
+            aria-describedby={error ? 'pin-error pin-hint' : undefined}
           />
 
           <div className="grid grid-cols-3 gap-2">
@@ -276,8 +180,7 @@ export default function PinEntryBox() {
                 key={digit}
                 type="button"
                 onClick={() => appendDigit(String(digit))}
-                disabled={status === 'loading'}
-                className="h-12 rounded-lg border border-white/20 bg-white/10 text-base font-semibold text-stone-100 transition hover:bg-white/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                className="h-12 rounded-lg border border-white/20 bg-white/10 text-base font-semibold text-stone-100 transition hover:bg-white/20 active:scale-[0.98]"
                 style={{ fontFamily: CP }}
               >
                 {digit}
@@ -286,8 +189,7 @@ export default function PinEntryBox() {
             <button
               type="button"
               onClick={clearPin}
-              disabled={status === 'loading'}
-              className="h-12 rounded-lg border border-white/20 bg-white/10 text-[10px] uppercase tracking-[0.2em] text-stone-200 transition hover:bg-white/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-12 rounded-lg border border-white/20 bg-white/10 text-[10px] uppercase tracking-[0.2em] text-stone-200 transition hover:bg-white/20 active:scale-[0.98]"
               style={{ fontFamily: CP }}
             >
               Clear
@@ -295,8 +197,7 @@ export default function PinEntryBox() {
             <button
               type="button"
               onClick={() => appendDigit('0')}
-              disabled={status === 'loading'}
-              className="h-12 rounded-lg border border-white/20 bg-white/10 text-base font-semibold text-stone-100 transition hover:bg-white/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-12 rounded-lg border border-white/20 bg-white/10 text-base font-semibold text-stone-100 transition hover:bg-white/20 active:scale-[0.98]"
               style={{ fontFamily: CP }}
             >
               0
@@ -304,33 +205,40 @@ export default function PinEntryBox() {
             <button
               type="button"
               onClick={removeDigit}
-              disabled={status === 'loading'}
-              className="h-12 rounded-lg border border-white/20 bg-white/10 text-[10px] uppercase tracking-[0.2em] text-stone-200 transition hover:bg-white/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-12 rounded-lg border border-white/20 bg-white/10 text-[10px] uppercase tracking-[0.2em] text-stone-200 transition hover:bg-white/20 active:scale-[0.98]"
               style={{ fontFamily: CP }}
             >
               Delete
             </button>
           </div>
 
-          {error && (
-            <p className="mt-2 text-center text-[10px] text-rose-300" style={{ fontFamily: CP }}>
-              {error}
+          {error === 'empty' && (
+            <p id="pin-error" role="alert" className="mt-2 text-center text-[10px] text-rose-300" style={{ fontFamily: CP }}>
+              Enter code
             </p>
+          )}
+
+          {error === 'invalid' && (
+            <div id="pin-error" role="alert" className="mt-2 text-center">
+              <p className="text-[10px] uppercase tracking-[0.12em] text-rose-300" style={{ fontFamily: CP }}>
+                Invalid pin
+              </p>
+              <p
+                id="pin-hint"
+                className="mt-1 text-[7px] tracking-[0.08em] text-red-500"
+                style={{ fontFamily: CP }}
+              >
+                0000 = nocode
+              </p>
+            </div>
           )}
 
           <button
             type="submit"
-            aria-label="Submit"
-            disabled={status === 'loading'}
-            className="mt-3 flex h-11 w-full items-center justify-center rounded-lg border border-white/20 bg-white/10 transition hover:bg-white/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-3 w-full rounded-lg border border-white/25 bg-white/15 py-2.5 text-[10px] uppercase tracking-[0.22em] text-stone-100 transition hover:bg-white/25 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/40"
+            style={{ fontFamily: CP }}
           >
-            {status === 'loading' ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-stone-300 border-t-transparent" />
-            ) : (
-              <svg viewBox="0 0 24 24" className="h-4 w-4 text-stone-200" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            )}
+            Submit
           </button>
         </form>
       )}
@@ -344,7 +252,6 @@ export default function PinEntryBox() {
       >
         <KeypadIcon />
       </button>
-
     </div>
   )
 }

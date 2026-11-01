@@ -1,6 +1,5 @@
 import './globals.css'
 import type { Metadata } from 'next'
-import { Analytics } from '@vercel/analytics/next'
 import { Cinzel_Decorative, Cormorant_Garamond, DM_Mono } from 'next/font/google'
 
 import AgeGate from '@/app/_components/age-gate'
@@ -38,7 +37,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CookieConsent />
         {children}
         <SiteFooter />
-        <Analytics />
       </body>
     </html>
   )

@@ -9,12 +9,6 @@ const PUBLIC_FOOTER_ROUTES = new Set([
   ROUTES.HOME,
   ROUTES.HELP,
   ROUTES.CONTACT,
-  ROUTES.WELCOME,
-  ROUTES.LOG_IN,
-  ROUTES.LOGIN,
-  ROUTES.FORGOT,
-  ROUTES.RESET,
-  ROUTES.SIGNUP,
 ])
 
 export default function SiteFooter() {
