@@ -172,6 +172,8 @@ Add these repository secrets in GitHub (**Settings → Secrets and variables →
 
 The deploy user needs read/write on `/var/www/fuxem` and permission to run `pm2 restart fuxem`.
 
+SSH key setup (generate key, VPS `authorized_keys`, GitHub secrets): [SSH-DEPLOY-KEY.md](./SSH-DEPLOY-KEY.md)
+
 You can also trigger a deploy manually: **Actions → Deploy production → Run workflow**.
 
 ## Notes
