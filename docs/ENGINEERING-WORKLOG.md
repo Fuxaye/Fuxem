@@ -2,6 +2,17 @@
 
 This file tracks implemented changes and active direction checkpoints so work stays aligned over time.
 
+## 2026-11-01
+
+### Completed
+- Auth gate milestone: `/welcome` PIN routes, `/nocode` signup, `/login` + API PIN rules, middleware public paths.
+- Production deploy pipeline: `deploy/update.sh`, `.github/workflows/deploy-production.yml`, VPS secrets + SSH key runbook.
+- Production fixes: login `Suspense`, VPS build heap, deploy flock, welcome PIN submit navigation.
+
+### Next (see `PLAN.md`)
+- Phase 1: post-login dashboard/member shell polish.
+- Phase 2–8: onboarding, profile/media, social, live, admin, public surfaces.
+
 ## 2026-07-12
 
 ### Completed

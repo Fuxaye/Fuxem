@@ -31,9 +31,15 @@ Run this checkpoint at least once per week or after each major feature slice:
 
 ## Current Production Snapshot (fuxem.com)
 
-- App is deployed on VPS at `185.167.98.48` with PM2 process `fuxem`.
-- Last deployment for Profile Cam completed successfully (build + restart + health checks).
-- Route `/profile/cam` exists and is reachable behind auth (redirects unauthenticated users to login).
+- App on VPS (nginx + PM2 `fuxem`, app dir `/var/www/fuxem`).
+- **Deploy**: push `main` → GitHub Actions tests + `deploy/update.sh`; see `deploy/README.md`.
+- **Auth entry (live)**: welcome PIN `0000`/`5555`, `/nocode` signup, `/login`, middleware cookie gate.
+- Route `/profile/cam` exists behind auth.
+
+## Milestone 2026-11-01: Auth + deploy automation
+
+- Welcome PIN submit fix, login Suspense, VPS update script, CI deploy, SSH deploy key documented.
+- Master roadmap: repo root `PLAN.md`.
 
 ## Profile Cam Feature (Implemented)
 
