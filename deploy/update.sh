@@ -18,6 +18,13 @@ if [[ ! -d "${APP_DIR}/.git" ]]; then
   exit 1
 fi
 
+LOCK_FILE="${APP_DIR}/.deploy.lock"
+exec 200>"${LOCK_FILE}"
+if ! flock -n 200; then
+  echo "Another deploy is already running. Try again in a few minutes."
+  exit 1
+fi
+
 cd "${APP_DIR}"
 
 echo "==> Fetch ${APP_BRANCH}"
