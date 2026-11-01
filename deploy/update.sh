@@ -32,6 +32,7 @@ echo "==> Database migrations"
 npm run db:deploy
 
 echo "==> Production build"
+export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=4096}"
 npm run build:vps
 
 echo "==> Restart PM2 (${PM2_NAME})"
