@@ -339,6 +339,7 @@ export function getUserGroupProfileRoute(userId: string) {
 }
 
 export const MEMBER_MENU_ITEMS = [
+  { label: 'Account', href: ROUTES.ME },
   { label: 'Dashboard', href: ROUTES.DASHBOARD },
   { label: 'Community', href: ROUTES.COMMUNITY },
   { label: 'Settings', href: ROUTES.ME_SETTINGS },

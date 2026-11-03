@@ -240,7 +240,9 @@ export default function MemberLayout({ children, initialUser, isBurner }: Member
   }, [pathname])
 
   const menuItems = getMemberMenuItems(initialUser?.profileHref)
-  const currentPageTitle = safePathname.startsWith('/usergroup/') && safePathname.endsWith('/main')
+  const currentPageTitle = safePathname === ROUTES.ME
+    ? 'Your account'
+    : safePathname.startsWith('/usergroup/') && safePathname.endsWith('/main')
     ? 'Member Home'
     : safePathname.startsWith('/usergroup/') && safePathname.endsWith('/profile')
       ? 'My Profile'
