@@ -242,7 +242,11 @@ export default function MemberLayout({ children, initialUser, isBurner }: Member
   const menuItems = getMemberMenuItems(initialUser?.profileHref)
   const currentPageTitle = safePathname === ROUTES.ME
     ? 'Your account'
-    : safePathname.startsWith('/usergroup/') && safePathname.endsWith('/main')
+    : safePathname === ROUTES.PROFILE
+      ? 'Edit profile'
+      : safePathname === ROUTES.PROFILE_VIEW
+        ? 'View profile'
+        : safePathname.startsWith('/usergroup/') && safePathname.endsWith('/main')
     ? 'Member Home'
     : safePathname.startsWith('/usergroup/') && safePathname.endsWith('/profile')
       ? 'My Profile'

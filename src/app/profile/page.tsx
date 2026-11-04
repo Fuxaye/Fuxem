@@ -1,16 +1,14 @@
-import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import jwt from 'jsonwebtoken'
 
-import CreatorPlatformShell from '@/app/_components/creator-platform-shell'
+import ProfileEditClient from '@/app/profile/_components/profile-edit-client'
 import { AUTH_COOKIE_NAME, ROUTES, SESSION_MODE_DEFAULT_MEMBER } from '@/lib/constants'
 import type { AuthTokenPayload } from '@/lib/types'
 
 function getTokenPayload(token: string): AuthTokenPayload | null {
   const jwtSecret = process.env.JWT_SECRET
-  if (!jwtSecret) {
-    return null
-  }
+  if (!jwtSecret) return null
 
   try {
     return jwt.verify(token, jwtSecret) as AuthTokenPayload
@@ -19,7 +17,7 @@ function getTokenPayload(token: string): AuthTokenPayload | null {
   }
 }
 
-async function requireAuthenticatedUserId(): Promise<string> {
+export default async function ProfilePage() {
   const cookieStore = await cookies()
   const token = cookieStore.get(AUTH_COOKIE_NAME)?.value
 
@@ -36,20 +34,5 @@ async function requireAuthenticatedUserId(): Promise<string> {
     redirect(ROUTES.DASHBOARD)
   }
 
-  const userId =
-    (typeof payload.userId === 'string' && payload.userId) ||
-    (typeof payload.sub === 'string' && payload.sub) ||
-    null
-
-  if (!userId) {
-    redirect(`${ROUTES.LOGIN}?returnTo=${encodeURIComponent(ROUTES.PROFILE)}`)
-  }
-
-  return userId
-}
-
-export default async function ProfilePage() {
-  await requireAuthenticatedUserId()
-
-  return <CreatorPlatformShell initialView="profile" />
+  return <ProfileEditClient />
 }

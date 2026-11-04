@@ -68,6 +68,7 @@ async function buildProfileResponse(userId: string) {
           bio: true,
           interests: true,
           kinks: true,
+          pronouns: true,
           avatarUrl: true,
           photoUrls: true,
           videoUrls: true,
@@ -100,7 +101,7 @@ async function buildProfileResponse(userId: string) {
       country: user.profile?.country || '',
       gender: user.profile?.gender || '',
       genderOther: user.profile?.genderOther || '',
-      pronouns: '',
+      pronouns: user.profile?.pronouns || '',
       sexualOrientation: user.profile?.sexualOrientation || '',
       orientationOther: user.profile?.orientationOther || '',
       intentions: '',
@@ -183,6 +184,7 @@ export async function PATCH(request: NextRequest) {
             bio: true,
             interests: true,
             kinks: true,
+            pronouns: true,
             avatarUrl: true,
             photoUrls: true,
             videoUrls: true,
@@ -209,6 +211,7 @@ export async function PATCH(request: NextRequest) {
     const nextInterests = normalizeStringArray(body.interests) ?? user.profile?.interests ?? []
     const nextKinks = normalizeStringArray(body.kinks) ?? normalizeJsonStringArray(user.profile?.kinks)
     const nextBio = normalizeString(body.bio) ?? user.profile?.bio ?? ''
+    const nextPronouns = normalizeString(body.pronouns) ?? user.profile?.pronouns ?? ''
     const nextAvatarUrl = normalizeString(body.avatarUrl) ?? user.profile?.avatarUrl ?? ''
     const nextPhotoUrls = normalizeStringArray(body.photoUrls) ?? user.profile?.photoUrls ?? []
     const nextVideoUrls = normalizeStringArray(body.videoUrls) ?? user.profile?.videoUrls ?? []
@@ -261,6 +264,7 @@ export async function PATCH(request: NextRequest) {
           interests: nextInterests,
           kinks: nextKinks,
           bio: nextBio,
+          pronouns: nextPronouns,
           avatarUrl: nextAvatarUrl,
           photoUrls: nextPhotoUrls,
           videoUrls: nextVideoUrls,
@@ -278,6 +282,7 @@ export async function PATCH(request: NextRequest) {
           interests: nextInterests,
           kinks: nextKinks,
           bio: nextBio,
+          pronouns: nextPronouns,
           avatarUrl: nextAvatarUrl,
           photoUrls: nextPhotoUrls,
           videoUrls: nextVideoUrls,

@@ -151,6 +151,13 @@ export async function loginWithPasscode(
   })
 }
 
+export async function deleteMemberMedia(kind: 'photo' | 'video', url: string): Promise<void> {
+  await apiCall('/api/member/media', {
+    method: 'DELETE',
+    body: JSON.stringify({ kind, url }),
+  })
+}
+
 export async function fetchMemberProfile(): Promise<MemberProfileResponse> {
   return apiCall('/api/member/profile', {
     method: 'GET',
