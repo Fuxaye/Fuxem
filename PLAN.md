@@ -1,6 +1,6 @@
 # Fuxem build plan
 
-Last updated: 2026-11-01
+Last updated: 2026-11-04
 
 ## Milestone: Auth gate + deploy (done)
 
@@ -16,6 +16,18 @@ Last updated: 2026-11-01
 - **Docs**: `deploy/README.md`, `deploy/SSH-DEPLOY-KEY.md`
 - **Smoke test**: `docs/POST_DEPLOY_SMOKE_TEST.md`
 
+## Milestone: Member home + profile media (done)
+
+### Shipped
+- **`/dashboard`**: restored member dashboard with `MemberLayout`.
+- **`/me`**: account hub; sidebar **Account** link.
+- **`/profile`**: real profile editor (fields, tags, avatar, Bunny upload, save via API).
+- **`/profile/view`**: read-only member preview; public **`/u/{username}`** shows saved media.
+- **Bunny**: production env on VPS (`fuxem` zone, `fuxem.b-cdn.net`); uploads via `/api/member/media/upload`.
+
+### Ops
+- Bunny secrets live only in **`/var/www/fuxem/.env`** (never in git). See `.env.example` for variable names.
+
 ---
 
 ## Rest of the site (recommended order)
@@ -24,10 +36,10 @@ Work in small slices; deploy after each slice that touches production behavior.
 
 | Phase | Focus | Outcome |
 |-------|--------|---------|
-| **1** | Post-login home | Dashboard `/dashboard` useful; `/me` routes; logout; returnTo after login |
-| **2** | Onboarding | Finish passcode/email-verified path after signup; profile basics |
-| **3** | Profile & discovery | `/me/profile`, public member pages, search/community sorting |
-| **4** | Media | Bunny env on VPS; photo/video upload + tier limits (see smoke test) |
+| **1** | Post-login home | ~~Dashboard, `/me`, nav~~ — **mostly done**; polish dashboard cards/links |
+| **2** | Onboarding | After **`/nocode` signup**, route to profile setup; align with required PATCH fields |
+| **3** | Profile & discovery | Editor **done**; improve search/community + public profile polish |
+| **4** | Media | Bunny **on VPS**; next: unify **`/camera`** capture to Bunny, retire Supabase path |
 | **5** | Social | Friends, messages, chatroom |
 | **6** | Live | Profile cam / LiveKit env + token flow |
 | **7** | Staff | Admin tools hub, moderation, audit logs |
@@ -36,7 +48,13 @@ Work in small slices; deploy after each slice that touches production behavior.
 ### Production env still to validate
 - SMTP → email verification in strict mode
 - LiveKit → cam rooms
-- Bunny → member uploads
+- ~~Bunny → member uploads~~ **configured on VPS**
+
+### Suggested next slice (pick one)
+1. **Post-signup flow** — `/nocode` success → `/profile` with checklist (city, gender, photo).
+2. **Camera → Bunny** — one upload pipeline; remove Supabase dependency for profile capture.
+3. **Community / search** — browse members with real profiles and avatars.
+4. **SMTP + verify email** — production mail so new accounts must verify before login.
 
 ---
 

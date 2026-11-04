@@ -2,6 +2,16 @@
 
 This file tracks implemented changes and active direction checkpoints so work stays aligned over time.
 
+## 2026-11-04
+
+### Completed
+- `/me` account hub; restored `/dashboard`; profile editor at `/profile` with Bunny uploads.
+- Production Bunny storage configured on VPS (zone `fuxem`, CDN `fuxem.b-cdn.net`).
+- `.env.example` documents Bunny variable names (secrets server-only).
+
+### Next (see `PLAN.md`)
+- Post-signup → profile setup, or camera/Bunny unification, or community discovery.
+
 ## 2026-11-01
 
 ### Completed
