@@ -27,7 +27,7 @@ function toggleList(value: string, values: string[], max?: number) {
   return [...values, value]
 }
 
-export default function ProfileEditClient() {
+export default function ProfileEditClient({ initialSetup = false }: { initialSetup?: boolean }) {
   const [data, setData] = useState<MemberProfileResponse | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [bio, setBio] = useState('')
@@ -44,6 +44,7 @@ export default function ProfileEditClient() {
   const [avatarUrl, setAvatarUrl] = useState('')
   const [photoUrls, setPhotoUrls] = useState<string[]>([])
   const [videoUrls, setVideoUrls] = useState<string[]>([])
+  const [isPublic, setIsPublic] = useState(true)
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -78,6 +79,7 @@ export default function ProfileEditClient() {
         setAvatarUrl(response.profile.avatarUrl || '')
         setPhotoUrls(response.profile.photoUrls || [])
         setVideoUrls(response.profile.videoUrls || [])
+        setIsPublic(initialSetup ? true : response.profile.isPublic)
       } catch (err) {
         if (mounted) {
           setError(err instanceof Error ? err.message : 'Could not load profile.')
@@ -91,7 +93,7 @@ export default function ProfileEditClient() {
     return () => {
       mounted = false
     }
-  }, [])
+  }, [initialSetup])
 
   const mediaPolicy = data?.media.policy
   const publicProfileHref = data?.user.username ? `/u/${data.user.username}` : ROUTES.ME
@@ -130,6 +132,7 @@ export default function ProfileEditClient() {
         avatarUrl: avatarUrl || photoUrls[0] || '',
         photoUrls,
         videoUrls,
+        isPublic: initialSetup ? true : isPublic,
       })
 
       setData(updated)
@@ -232,6 +235,15 @@ export default function ProfileEditClient() {
           <p className="mt-10 text-sm text-text-muted">Loading profile…</p>
         ) : (
           <form onSubmit={handleSave} className="mt-8 space-y-8">
+            {initialSetup ? (
+              <div className="rounded-2xl border border-[#7C5CFC]/35 bg-[#7C5CFC]/10 p-4 text-sm text-text-primary">
+                <p className="font-medium">Welcome — let&apos;s build your member profile.</p>
+                <p className="mt-1 text-text-muted">
+                  Add at least one photo, your city, gender, and orientation, then save. You&apos;ll appear in member
+                  search when you enable discovery below.
+                </p>
+              </div>
+            ) : null}
             <section className="rounded-2xl border border-border-subtle bg-bg-card/80 p-5">
               <h2 className="text-sm font-semibold text-text-primary">Photos</h2>
               <p className="mt-1 text-xs text-text-muted">
@@ -464,6 +476,16 @@ export default function ProfileEditClient() {
                 })}
               </div>
             </section>
+
+            <label className="flex items-center gap-3 rounded-2xl border border-border-subtle bg-bg-card/80 p-4 text-sm text-text-primary">
+              <input
+                type="checkbox"
+                checked={isPublic}
+                onChange={(event) => setIsPublic(event.target.checked)}
+                className="h-4 w-4 rounded border-border-subtle"
+              />
+              Show my profile in community search
+            </label>
 
             {error ? (
               <p role="alert" className="rounded-xl border border-rose-400/30 bg-rose-950/40 px-4 py-3 text-sm text-rose-200">

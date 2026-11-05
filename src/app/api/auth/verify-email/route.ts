@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     if (user.emailVerified) {
       // Already verified — send to login
-      return NextResponse.redirect(new URL('/login?verified=1', request.url))
+      return NextResponse.redirect(new URL('/login?verified=1&returnTo=%2Fprofile%3Fsetup%3D1', request.url))
     }
 
     if (!user.emailVerificationExpiresAt || user.emailVerificationExpiresAt < new Date()) {
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       sendAssignedPinEmail(user.email, user.firstName, NEW_MEMBER_PIN)
     }
 
-    return NextResponse.redirect(new URL('/login?verified=1', request.url))
+    return NextResponse.redirect(new URL('/login?verified=1&returnTo=%2Fprofile%3Fsetup%3D1', request.url))
   } catch (error) {
     console.error('[verify-email]', error)
     return NextResponse.redirect(new URL('/welcome?error=server', request.url))

@@ -72,6 +72,7 @@ async function buildProfileResponse(userId: string) {
           avatarUrl: true,
           photoUrls: true,
           videoUrls: true,
+          isPublic: true,
         },
       },
     },
@@ -112,6 +113,7 @@ async function buildProfileResponse(userId: string) {
       avatarUrl: user.profile?.avatarUrl || '',
       photoUrls,
       videoUrls,
+      isPublic: user.profile?.isPublic ?? false,
       twitterUrl: '',
       fetlifeUrl: '',
       onlyfansUrl: '',
@@ -188,6 +190,7 @@ export async function PATCH(request: NextRequest) {
             avatarUrl: true,
             photoUrls: true,
             videoUrls: true,
+            isPublic: true,
           },
         },
       },
@@ -215,6 +218,8 @@ export async function PATCH(request: NextRequest) {
     const nextAvatarUrl = normalizeString(body.avatarUrl) ?? user.profile?.avatarUrl ?? ''
     const nextPhotoUrls = normalizeStringArray(body.photoUrls) ?? user.profile?.photoUrls ?? []
     const nextVideoUrls = normalizeStringArray(body.videoUrls) ?? user.profile?.videoUrls ?? []
+    const nextIsPublic =
+      typeof body.isPublic === 'boolean' ? body.isPublic : (user.profile?.isPublic ?? false)
 
     const mediaPolicy = getMemberMediaPolicy({ role: user.role, isPremium: user.isPremium })
 
@@ -268,6 +273,7 @@ export async function PATCH(request: NextRequest) {
           avatarUrl: nextAvatarUrl,
           photoUrls: nextPhotoUrls,
           videoUrls: nextVideoUrls,
+          isPublic: nextIsPublic,
         },
         update: {
           city: nextCity,
@@ -286,6 +292,7 @@ export async function PATCH(request: NextRequest) {
           avatarUrl: nextAvatarUrl,
           photoUrls: nextPhotoUrls,
           videoUrls: nextVideoUrls,
+          isPublic: nextIsPublic,
         },
       }),
     ])

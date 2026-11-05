@@ -11,47 +11,9 @@ import {
 } from '@/lib/constants'
 import { sendVerificationEmail } from '@/lib/email'
 import { generateNextAccountName } from '@/lib/account-name'
+import { calculateAgeUtc, isAtLeastMinimumAge, parseIsoDateOfBirth } from '@/lib/dob'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-function parseDob(value: unknown): Date | null {
-  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return null
-  }
-
-  const date = new Date(`${value}T00:00:00.000Z`)
-  if (Number.isNaN(date.getTime())) {
-    return null
-  }
-
-  const [year, month, day] = value.split('-').map(Number)
-  if (
-    date.getUTCFullYear() !== year ||
-    date.getUTCMonth() + 1 !== month ||
-    date.getUTCDate() !== day
-  ) {
-    return null
-  }
-
-  return date
-}
-
-function calculateAge(dateOfBirth: Date): number {
-  const now = new Date()
-  let age = now.getUTCFullYear() - dateOfBirth.getUTCFullYear()
-  const monthDifference = now.getUTCMonth() - dateOfBirth.getUTCMonth()
-  const dayDifference = now.getUTCDate() - dateOfBirth.getUTCDate()
-
-  if (monthDifference < 0 || (monthDifference === 0 && dayDifference < 0)) {
-    age -= 1
-  }
-
-  return age
-}
-
-function isAtLeastMinimumAge(dateOfBirth: Date, minimumAge: number): boolean {
-  return calculateAge(dateOfBirth) >= minimumAge
-}
 
 function isConfiguredValue(value: string | undefined): boolean {
   if (!value?.trim()) {
@@ -75,7 +37,7 @@ export async function POST(request: NextRequest) {
           : body.firstName
     const username = typeof rawUsername === 'string' ? rawUsername.trim().toLowerCase() : ''
     const password = typeof body.password === 'string' ? body.password.trim() : ''
-    const dateOfBirth = parseDob(body.dateOfBirth)
+    const dateOfBirth = parseIsoDateOfBirth(body.dateOfBirth)
 
     if (!email || !EMAIL_REGEX.test(email)) {
       return NextResponse.json({ error: MESSAGES.INVALID_EMAIL }, { status: 400 })
@@ -115,7 +77,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: MESSAGES.EMAIL_EXISTS }, { status: 409 })
     }
 
-    const age = calculateAge(dateOfBirth)
+    const age = calculateAgeUtc(dateOfBirth)
     const token = crypto.randomBytes(32).toString('hex')
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
     const personalCode = crypto.randomBytes(4).toString('hex').toUpperCase()
@@ -136,7 +98,7 @@ export async function POST(request: NextRequest) {
           loginPin: NEW_MEMBER_PIN,
           emailVerificationToken: token,
           emailVerificationExpiresAt: expiresAt,
-          onboardingStep: 'passcode',
+          onboardingStep: 'profile',
           profile: {
             create: {
               age,
@@ -165,12 +127,16 @@ export async function POST(request: NextRequest) {
         isConfiguredValue(process.env.SMTP_PASS)
 
       if (smtpConfigured) {
-        // SMTP configured: send verification email and require verification
         try {
           await sendVerificationEmail(email, username, token)
         } catch (error) {
-          await prisma.user.delete({ where: { id: createdUser.id } }).catch(() => undefined)
-          return NextResponse.json({ error: MESSAGES.ERROR_GENERAL }, { status: 500 })
+          console.error('[register] verification email failed; auto-verifying account', error)
+          await prisma.user.update({
+            where: { email },
+            data: { emailVerified: true, emailVerificationToken: null },
+          })
+          requiresEmailVerification = false
+          successMessage = MESSAGES.ACCOUNT_CREATED
         }
       } else {
         // SMTP not configured: auto-verify the account

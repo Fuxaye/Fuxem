@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUserId } from '@/lib/auth'
 import { getMemberMediaPolicy } from '@/lib/member-media-policy'
 import prisma from '@/lib/prisma'
+import { assertEmailVerifiedForMedia } from '@/lib/require-verified-email'
 
 type MediaKind = 'photo' | 'video'
 
@@ -83,6 +84,11 @@ export async function POST(request: NextRequest) {
 
     if (!userId) {
       return NextResponse.json({ error: 'Authentication required.' }, { status: 401 })
+    }
+
+    const verifyError = await assertEmailVerifiedForMedia(userId)
+    if (verifyError) {
+      return verifyError
     }
 
     const body = (await request.json().catch(() => null)) as

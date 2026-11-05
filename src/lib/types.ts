@@ -176,6 +176,7 @@ export interface MemberProfileResponse {
     avatarUrl: string
     photoUrls: string[]
     videoUrls: string[]
+    isPublic: boolean
     twitterUrl: string
     fetlifeUrl: string
     onlyfansUrl: string
@@ -227,9 +228,10 @@ export interface UpdateMemberProfileInput {
   bio?: string
   interests?: string[]
   kinks?: string[]
-  avatarUrl?: string
-  photoUrls?: string[]
-  videoUrls?: string[]
+    avatarUrl?: string
+    photoUrls?: string[]
+    videoUrls?: string[]
+    isPublic?: boolean
   twitterUrl?: string
   fetlifeUrl?: string
   onlyfansUrl?: string

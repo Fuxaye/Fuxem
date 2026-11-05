@@ -3,8 +3,10 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { FormEvent, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
-import { MESSAGES, MIN_AGE, MIN_PASSWORD_LENGTH, USERNAME_REGEX } from '@/lib/constants'
+import { MESSAGES, MIN_AGE, MIN_PASSWORD_LENGTH, ROUTES, USERNAME_REGEX } from '@/lib/constants'
+import { getMaximumBirthDateIso, isIsoDateOfBirthOldEnough } from '@/lib/dob'
 
 type Availability = 'idle' | 'checking' | 'available' | 'taken' | 'error'
 
@@ -17,33 +19,16 @@ type RegisterResponse = {
   username?: string
   accountName?: string
   requiresEmailVerification?: boolean
+  user?: { id: string }
 }
 
 const CP = "Copperplate, 'Copperplate Gothic Light', fantasy"
-
-function isOldEnough(dateOfBirth: string): boolean {
-  const birthDate = new Date(`${dateOfBirth}T00:00:00`)
-  if (Number.isNaN(birthDate.getTime())) return false
-
-  const today = new Date()
-  let age = today.getFullYear() - birthDate.getFullYear()
-  const beforeBirthday =
-    today.getMonth() < birthDate.getMonth() ||
-    (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())
-
-  if (beforeBirthday) age -= 1
-  return age >= MIN_AGE
-}
-
-function getMaximumBirthDate(): string {
-  const date = new Date()
-  date.setFullYear(date.getFullYear() - MIN_AGE)
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${date.getFullYear()}-${month}-${day}`
-}
+const PROFILE_SETUP_PATH = `${ROUTES.PROFILE}?setup=1`
+const LOGIN_AFTER_SIGNUP = `${ROUTES.LOGIN}?returnTo=${encodeURIComponent(PROFILE_SETUP_PATH)}`
+const MAX_BIRTH_DATE = getMaximumBirthDateIso()
 
 export default function NoCodeSignupPage() {
+  const router = useRouter()
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [dateOfBirth, setDateOfBirth] = useState('')
@@ -105,8 +90,8 @@ export default function NoCodeSignupPage() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       nextErrors.email = 'Enter a valid email address.'
     }
-    if (!dateOfBirth || !isOldEnough(dateOfBirth)) {
-      nextErrors.dateOfBirth = `You must be at least ${MIN_AGE} years old.`
+    if (!dateOfBirth || !isIsoDateOfBirthOldEnough(dateOfBirth)) {
+      nextErrors.dateOfBirth = MESSAGES.INVALID_DATE_OF_BIRTH
     }
     if (password.trim().length < MIN_PASSWORD_LENGTH) {
       nextErrors.password = MESSAGES.PASSWORD_MIN_LENGTH
@@ -122,7 +107,12 @@ export default function NoCodeSignupPage() {
 
     const nextErrors = validateForm()
     setErrors(nextErrors)
-    if (Object.keys(nextErrors).length > 0 || status === 'submitting') return
+    if (Object.keys(nextErrors).length > 0 || status === 'submitting' || availability === 'checking') {
+      if (availability === 'checking') {
+        setFormError('Still checking User ID availability. Wait a moment and try again.')
+      }
+      return
+    }
 
     setStatus('submitting')
 
@@ -145,6 +135,8 @@ export default function NoCodeSignupPage() {
           setErrors((previous) => ({ ...previous, username: data.error }))
         } else if (data.error === MESSAGES.EMAIL_EXISTS) {
           setErrors((previous) => ({ ...previous, email: 'This email already has an account.' }))
+        } else if (data.error === MESSAGES.INVALID_DATE_OF_BIRTH) {
+          setErrors((previous) => ({ ...previous, dateOfBirth: data.error }))
         } else {
           setFormError(data.error || MESSAGES.ERROR_GENERAL)
         }
@@ -154,6 +146,10 @@ export default function NoCodeSignupPage() {
 
       setRegistration(data)
       setStatus('success')
+
+      if (!data.requiresEmailVerification && data.user) {
+        router.push(PROFILE_SETUP_PATH)
+      }
     } catch {
       setFormError(MESSAGES.ERROR_GENERAL)
       setStatus('idle')
@@ -223,15 +219,22 @@ export default function NoCodeSignupPage() {
             )}
             <p className="text-center text-xs text-stone-400">
               {registration?.requiresEmailVerification
-                ? 'Check your email to finish setting up your account.'
-                : 'Your account is ready. You can log in now.'}
+                ? 'Check your email for a verification link, then continue below.'
+                : 'Next: add a photo and finish your public profile.'}
             </p>
             <Link
-              href="/login"
+              href={registration?.requiresEmailVerification ? ROUTES.VERIFY_EMAIL : LOGIN_AFTER_SIGNUP}
               className="inline-flex w-full items-center justify-center rounded-full border border-pink-300/20 bg-gradient-to-r from-pink-600/90 to-rose-700/90 px-4 py-3 text-sm tracking-wide text-stone-100 transition hover:brightness-110"
               style={{ fontFamily: CP }}
             >
-              Continue to log in
+              {registration?.requiresEmailVerification ? 'Resend or check email' : 'Log in and build profile'}
+            </Link>
+            <Link
+              href={LOGIN_AFTER_SIGNUP}
+              className="inline-flex w-full items-center justify-center rounded-full border border-white/15 px-4 py-3 text-sm text-stone-300 transition hover:border-white/30"
+              style={{ fontFamily: CP }}
+            >
+              Log in later
             </Link>
           </div>
         ) : (
@@ -286,10 +289,11 @@ export default function NoCodeSignupPage() {
             <input
               type="date"
               autoComplete="bday"
-              max={getMaximumBirthDate()}
+              max={MAX_BIRTH_DATE}
               value={dateOfBirth}
               onChange={(event) => {
                 setDateOfBirth(event.target.value)
+                setErrors((previous) => ({ ...previous, dateOfBirth: undefined }))
                 setFormError('')
               }}
               className={fieldClass(!!errors.dateOfBirth)}

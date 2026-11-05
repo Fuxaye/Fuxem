@@ -17,6 +17,15 @@ async function uploadMemberMedia(kind: 'photo' | 'video', file: File): Promise<s
   return payload.url
 }
 
+export async function uploadMemberMediaBlob(
+  kind: 'photo' | 'video',
+  blob: Blob,
+  fileName: string
+): Promise<string> {
+  const file = new File([blob], fileName, { type: blob.type || 'application/octet-stream' })
+  return uploadMemberMedia(kind, file)
+}
+
 export async function uploadProfilePhotos(_userId: string, files: FileList): Promise<string[]> {
   const uploadedUrls: string[] = []
 

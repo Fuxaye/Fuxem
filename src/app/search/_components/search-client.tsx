@@ -338,12 +338,18 @@ export default function SearchPageClient({ initialResults = [] }: SearchPageClie
                                   : 'Add Friend'}
                           </Button>
                           <Link
-                            href={`${ROUTES.MESSAGES}/${member.id}`}
+                            href={`/u/${member.username}`}
                             className="inline-flex h-9 items-center justify-center rounded-md border border-border-subtle bg-bg-surface px-3 text-xs font-medium text-text-primary transition-colors hover:bg-bg-card"
                           >
-                            Message
+                            View profile
                           </Link>
                         </div>
+                        <Link
+                          href={`${ROUTES.MESSAGES}/${member.id}`}
+                          className="inline-flex h-9 w-full items-center justify-center rounded-md border border-border-subtle bg-bg-surface px-3 text-xs font-medium text-text-primary transition-colors hover:bg-bg-card"
+                        >
+                          Message
+                        </Link>
                       </CardContent>
                     </Card>
                   </motion.div>

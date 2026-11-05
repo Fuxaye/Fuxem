@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Camera, CameraOff, Circle, Loader2, Square, UploadCloud } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { supabase } from '@/lib/supabase'
+import { uploadMemberMediaBlob } from '@/lib/photo-upload'
 
 type MediaPolicy = {
   tier: 'premium' | 'free' | 'burner'
@@ -107,52 +107,25 @@ export default function ProfileMediaCapture() {
     }
   }
 
-  async function uploadBlob(path: string, blob: Blob) {
-    if (!supabase) {
-      throw new Error('Upload storage is not configured.')
-    }
-
-    const { error: uploadError } = await supabase.storage
-      .from('profile-photos')
-      .upload(path, blob, {
-        cacheControl: '3600',
-        upsert: false,
-      })
-
-    if (uploadError) {
-      throw uploadError
-    }
-
-    const { data } = supabase.storage.from('profile-photos').getPublicUrl(path)
-    if (!data?.publicUrl) {
-      throw new Error('Unable to get uploaded media URL.')
-    }
-
-    return data.publicUrl
-  }
-
-  async function saveMedia(kind: 'photo' | 'video', url: string, watermarked: boolean) {
-    const response = await fetch('/api/member/media', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ kind, url, watermarked }),
-    })
-
-    const data = await response.json()
-    if (!response.ok) {
-      throw new Error(data.error || 'Unable to save media to profile.')
-    }
-
+  async function uploadCapturedMedia(kind: 'photo' | 'video', blob: Blob, fileName: string) {
+    const url = await uploadMemberMediaBlob(kind, blob, fileName)
     setMediaState((previousState) => {
       if (!previousState) return previousState
+      const photoUrls =
+        kind === 'photo' ? Array.from(new Set([url, ...previousState.photoUrls])) : previousState.photoUrls
+      const videoUrls =
+        kind === 'video' ? Array.from(new Set([url, ...previousState.videoUrls])) : previousState.videoUrls
       return {
         ...previousState,
-        counts: data.counts,
-        photoUrls: data.photoUrls,
-        videoUrls: data.videoUrls,
+        counts: {
+          photos: photoUrls.length,
+          videos: videoUrls.length,
+        },
+        photoUrls,
+        videoUrls,
       }
     })
+    return url
   }
 
   async function capturePhoto() {
@@ -205,12 +178,11 @@ export default function ProfileMediaCapture() {
         )
       })
 
-      const path = `profile-photos/camera/${Date.now()}-${Math.random().toString(36).slice(2)}${
+      const fileName = `camera-${Date.now()}-${Math.random().toString(36).slice(2)}${
         mediaState.policy.requireWatermark ? '-wm' : ''
       }.jpg`
 
-      const uploadedUrl = await uploadBlob(path, blob)
-      await saveMedia('photo', uploadedUrl, mediaState.policy.requireWatermark)
+      await uploadCapturedMedia('photo', blob, fileName)
       setMessage('Photo saved to your profile gallery.')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to capture photo.')
@@ -257,9 +229,8 @@ export default function ProfileMediaCapture() {
         const outputType = recorder.mimeType || 'video/webm'
         const blob = new Blob(chunksRef.current, { type: outputType })
 
-        const path = `profile-videos/camera/${Date.now()}-${Math.random().toString(36).slice(2)}.webm`
-        const uploadedUrl = await uploadBlob(path, blob)
-        await saveMedia('video', uploadedUrl, false)
+        const fileName = `camera-${Date.now()}-${Math.random().toString(36).slice(2)}.webm`
+        await uploadCapturedMedia('video', blob, fileName)
         setMessage('Video saved to your profile.')
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unable to save recording.')

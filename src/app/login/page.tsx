@@ -4,7 +4,7 @@ import { FormEvent, Suspense, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { NEW_MEMBER_PIN, ROUTES } from '@/lib/constants'
+import { NEW_MEMBER_PIN, MESSAGES, ROUTES } from '@/lib/constants'
 
 const CP = "Copperplate, 'Copperplate Gothic Light', fantasy"
 
@@ -20,6 +20,7 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
+  const verified = params.get('verified') === '1'
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
@@ -33,16 +34,19 @@ function LoginForm() {
         identifier: identifier.trim(),
         password,
         passcode: NEW_MEMBER_PIN,
+        returnTo: safeReturnTo(params.get('returnTo')),
       }),
     })
 
     setPending(false)
     if (!response.ok) {
-      setError('Invalid credentials')
+      const data = (await response.json().catch(() => null)) as { error?: string } | null
+      setError(data?.error || 'Invalid credentials')
       return
     }
 
-    router.push(safeReturnTo(params.get('returnTo')))
+    const data = (await response.json()) as { returnTo?: string }
+    router.push(safeReturnTo(data.returnTo || params.get('returnTo')))
     router.refresh()
   }
 
@@ -84,6 +88,11 @@ function LoginForm() {
               Log in
             </h1>
             <p className="mt-2 text-sm text-stone-400">You must be an adult.</p>
+            {verified ? (
+              <p className="mt-3 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-sm text-emerald-100">
+                Email verified. Log in to continue building your profile.
+              </p>
+            ) : null}
           </div>
 
           <form onSubmit={onSubmit} className="space-y-4">
@@ -106,7 +115,19 @@ function LoginForm() {
               onChange={(event) => setPassword(event.target.value)}
               required
             />
-            {error ? <p role="alert" className="text-sm text-rose-300">{error}</p> : null}
+            {error ? (
+              <p role="alert" className="text-sm text-rose-300">
+                {error}
+                {error === MESSAGES.EMAIL_VERIFICATION_REQUIRED ? (
+                  <>
+                    {' '}
+                    <Link href={ROUTES.VERIFY_EMAIL} className="underline underline-offset-2">
+                      Resend verification
+                    </Link>
+                  </>
+                ) : null}
+              </p>
+            ) : null}
             <button
               className="w-full rounded-full border border-pink-300/20 bg-gradient-to-r from-pink-600/90 to-rose-700/90 py-3 text-sm tracking-wide text-stone-100 transition hover:brightness-110 disabled:cursor-wait disabled:opacity-70"
               style={{ fontFamily: CP }}

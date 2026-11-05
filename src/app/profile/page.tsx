@@ -17,7 +17,12 @@ function getTokenPayload(token: string): AuthTokenPayload | null {
   }
 }
 
-export default async function ProfilePage() {
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ setup?: string }>
+}) {
+  const params = await searchParams
   const cookieStore = await cookies()
   const token = cookieStore.get(AUTH_COOKIE_NAME)?.value
 
@@ -34,5 +39,5 @@ export default async function ProfilePage() {
     redirect(ROUTES.DASHBOARD)
   }
 
-  return <ProfileEditClient />
+  return <ProfileEditClient initialSetup={params.setup === '1'} />
 }

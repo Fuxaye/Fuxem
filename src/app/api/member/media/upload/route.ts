@@ -4,6 +4,7 @@ import { getAuthenticatedUserId } from '@/lib/auth'
 import { MAX_PROFILE_PHOTO_BYTES, MESSAGES } from '@/lib/constants'
 import { getMemberMediaPolicy } from '@/lib/member-media-policy'
 import prisma from '@/lib/prisma'
+import { assertEmailVerifiedForMedia } from '@/lib/require-verified-email'
 import { uploadToBunnyStorage } from '@/lib/storage/bunny'
 
 const MAX_PROFILE_VIDEO_BYTES = 100 * 1024 * 1024
@@ -26,6 +27,11 @@ export async function POST(request: NextRequest) {
 
     if (!userId) {
       return NextResponse.json({ error: MESSAGES.AUTH_REQUIRED }, { status: 401 })
+    }
+
+    const verifyError = await assertEmailVerifiedForMedia(userId)
+    if (verifyError) {
+      return verifyError
     }
 
     const formData = await request.formData()

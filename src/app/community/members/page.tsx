@@ -44,9 +44,11 @@ export default async function MembersPage() {
     take: 12,
     select: {
       id: true,
+      username: true,
       displayName: true,
       profile: {
         select: {
+          avatarUrl: true,
           location: true,
           city: true,
           state: true,
@@ -70,9 +72,11 @@ export default async function MembersPage() {
       take: 12,
       select: {
         id: true,
+        username: true,
         displayName: true,
         profile: {
           select: {
+            avatarUrl: true,
             location: true,
             city: true,
             state: true,
@@ -144,21 +148,32 @@ export default async function MembersPage() {
               const location = profile ? getLocation(profile) : 'Location hidden'
               const bio = profile?.bio || 'Profile details are limited for privacy. Open profile to learn more.'
 
+              const profileHref = member.username ? `/u/${member.username}` : ROUTES.PROFILE_VIEW
+              const avatarUrl = profile?.avatarUrl
+
               return (
             <article
               key={member.id}
               className="rounded-2xl border border-white/10 bg-black/30 p-5 backdrop-blur transition hover:border-white/20"
             >
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  className="mb-4 h-16 w-16 rounded-full border border-white/15 object-cover"
+                />
+              ) : null}
               <p className="text-xs uppercase tracking-[0.16em] text-stone-400">{role}</p>
               <h2 className="mt-2 text-lg font-semibold text-stone-100">{member.displayName}</h2>
               <p className="text-sm text-stone-400">{location}</p>
               <p className="mt-3 text-sm leading-6 text-stone-300">{bio}</p>
-              <button
-                type="button"
-                className="mt-4 w-full rounded-xl border border-white/20 bg-white/[0.06] px-3 py-2 text-sm text-stone-100 transition hover:border-white/35 hover:bg-white/[0.1]"
+              <Link
+                href={profileHref}
+                className="mt-4 flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/[0.06] px-3 py-2 text-sm text-stone-100 transition hover:border-white/35 hover:bg-white/[0.1]"
               >
                 View profile
-              </button>
+              </Link>
             </article>
               )
             })()
