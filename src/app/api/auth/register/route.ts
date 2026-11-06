@@ -120,13 +120,13 @@ export async function POST(request: NextRequest) {
       requiresEmailVerification = false
       successMessage = MESSAGES.ACCOUNT_CREATED
     } else {
-      // Require the same complete SMTP configuration used by the mail helper.
-      const smtpConfigured =
-        isConfiguredValue(process.env.SMTP_HOST) &&
-        isConfiguredValue(process.env.SMTP_USER) &&
-        isConfiguredValue(process.env.SMTP_PASS)
+      const mailConfigured =
+        isConfiguredValue(process.env.RESEND_API_KEY) ||
+        (isConfiguredValue(process.env.SMTP_HOST) &&
+          isConfiguredValue(process.env.SMTP_USER) &&
+          isConfiguredValue(process.env.SMTP_PASS))
 
-      if (smtpConfigured) {
+      if (mailConfigured) {
         try {
           await sendVerificationEmail(email, username, token)
         } catch (error) {

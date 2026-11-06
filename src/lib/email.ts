@@ -22,6 +22,45 @@ const transporter = nodemailer.createTransport({
 const FROM = process.env.SMTP_FROM || SMTP_USER || 'noreply@fuxem.com'
 const SITE_NAME = 'fuxem'
 
+function mailIsConfigured(): boolean {
+  return Boolean(process.env.RESEND_API_KEY?.trim() || (SMTP_USER && SMTP_PASS))
+}
+
+async function deliverEmail(message: { to: string; subject: string; html: string }) {
+  const resendKey = process.env.RESEND_API_KEY?.trim()
+  const from = `${SITE_NAME} <${FROM}>`
+
+  if (resendKey) {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${resendKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from,
+        to: [message.to],
+        subject: message.subject,
+        html: message.html,
+      }),
+    })
+
+    if (!response.ok) {
+      const body = await response.text()
+      throw new Error(`Resend ${response.status}: ${body.slice(0, 300)}`)
+    }
+
+    return
+  }
+
+  await transporter.sendMail({
+    from,
+    to: message.to,
+    subject: message.subject,
+    html: message.html,
+  })
+}
+
 function getBaseUrl() {
   const rawCandidates = [
     process.env.NEXT_PUBLIC_API_URL,
@@ -48,17 +87,16 @@ export async function sendVerificationEmail(to: string, firstName: string, token
   const base = getBaseUrl()
   const link = `${base}/api/auth/verify-email?token=${token}`
 
-  if (!SMTP_USER || !SMTP_PASS) {
+  if (!mailIsConfigured()) {
     if (process.env.NODE_ENV !== 'production') {
-      console.warn('[sendVerificationEmail] SMTP credentials not configured. Verification link:', link)
+      console.warn('[sendVerificationEmail] Email is not configured. Verification link:', link)
       return
     }
 
     throw new Error('Email service is not configured')
   }
 
-  await transporter.sendMail({
-    from: `${SITE_NAME} <${FROM}>`,
+  await deliverEmail({
     to,
     subject: `Verify your email — ${SITE_NAME}`,
     html: `
@@ -76,16 +114,15 @@ export async function sendVerificationEmail(to: string, firstName: string, token
 export async function sendLoginAlertEmail(to: string, firstName: string) {
   const now = new Date().toUTCString()
 
-  if (!SMTP_USER || !SMTP_PASS) {
+  if (!mailIsConfigured()) {
     if (process.env.NODE_ENV !== 'production') {
-      console.warn('[sendLoginAlertEmail] SMTP credentials not configured. Skipping alert email.')
+      console.warn('[sendLoginAlertEmail] Email is not configured. Skipping alert email.')
     }
     return
   }
 
   // Fire and forget — caller should not await this
-  transporter.sendMail({
-    from: `${SITE_NAME} <${FROM}>`,
+  void deliverEmail({
     to,
     subject: `New login detected — ${SITE_NAME}`,
     html: `
@@ -100,15 +137,14 @@ export async function sendLoginAlertEmail(to: string, firstName: string) {
 }
 
 export async function sendAssignedPinEmail(to: string, firstName: string, pin: string) {
-  if (!SMTP_USER || !SMTP_PASS) {
+  if (!mailIsConfigured()) {
     if (process.env.NODE_ENV !== 'production') {
-      console.warn('[sendAssignedPinEmail] SMTP credentials not configured. Skipping assigned PIN email.')
+      console.warn('[sendAssignedPinEmail] Email is not configured. Skipping assigned PIN email.')
     }
     return
   }
 
-  await transporter.sendMail({
-    from: `${SITE_NAME} <${FROM}>`,
+  await deliverEmail({
     to,
     subject: `Your login PIN — ${SITE_NAME}`,
     html: `
@@ -124,15 +160,14 @@ export async function sendAssignedPinEmail(to: string, firstName: string, pin: s
 }
 
 export function sendOnboardingWelcomeEmail(to: string, displayName: string, personalCode: string) {
-  if (!SMTP_USER || !SMTP_PASS) {
+  if (!mailIsConfigured()) {
     if (process.env.NODE_ENV !== 'production') {
-      console.warn('[sendOnboardingWelcomeEmail] SMTP credentials not configured. Skipping onboarding welcome email.')
+      console.warn('[sendOnboardingWelcomeEmail] Email is not configured. Skipping onboarding welcome email.')
     }
     return
   }
 
-  transporter.sendMail({
-    from: `${SITE_NAME} <${FROM}>`,
+  void deliverEmail({
     to,
     subject: `Your account is ready — ${SITE_NAME}`,
     html: `
@@ -151,17 +186,16 @@ export async function sendCredentialResetEmail(to: string, firstName: string, to
   const base = getBaseUrl()
   const link = `${base}/reset?token=${token}`
 
-  if (!SMTP_USER || !SMTP_PASS) {
+  if (!mailIsConfigured()) {
     if (process.env.NODE_ENV !== 'production') {
-      console.warn('[sendCredentialResetEmail] SMTP credentials not configured. Reset link:', link)
+      console.warn('[sendCredentialResetEmail] Email is not configured. Reset link:', link)
       return
     }
 
     throw new Error('Email service is not configured')
   }
 
-  await transporter.sendMail({
-    from: `${SITE_NAME} <${FROM}>`,
+  await deliverEmail({
     to,
     subject: `Reset your login credentials — ${SITE_NAME}`,
     html: `
