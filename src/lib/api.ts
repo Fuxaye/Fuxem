@@ -12,6 +12,7 @@ import type {
   DiscoverResponse,
   ConversationMessagesResponse,
   ConversationsResponse,
+  FriendListResponse,
   FriendRequestsResponse,
   FriendRequestResponse,
   FriendshipDecisionAction,
@@ -360,6 +361,13 @@ export async function sendFriendRequest(recipientId: string): Promise<FriendRequ
   return apiCall('/api/friends/request', {
     method: 'POST',
     body: JSON.stringify({ recipientId }),
+  })
+}
+
+export async function fetchFriends(signal?: AbortSignal): Promise<FriendListResponse> {
+  return apiCall('/api/friends', {
+    method: 'GET',
+    signal,
   })
 }
 

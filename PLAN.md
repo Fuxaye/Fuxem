@@ -1,6 +1,6 @@
 # Fuxem build plan
 
-Last updated: 2026-11-04
+Last updated: 2026-11-07
 
 ## Milestone: Auth gate + deploy (done)
 
@@ -37,24 +37,21 @@ Work in small slices; deploy after each slice that touches production behavior.
 | Phase | Focus | Outcome |
 |-------|--------|---------|
 | **1** | Post-login home | ~~Dashboard, `/me`, nav~~ — **mostly done**; polish dashboard cards/links |
-| **2** | Onboarding | After **`/nocode` signup**, route to profile setup; align with required PATCH fields |
-| **3** | Profile & discovery | Editor **done**; improve search/community + public profile polish |
-| **4** | Media | Bunny **on VPS**; next: unify **`/camera`** capture to Bunny, retire Supabase path |
-| **5** | Social | Friends, messages, chatroom |
+| **2** | Onboarding | **Done.** `/nocode` continues to `/profile?setup=1` after signup or email verify |
+| **3** | Profile & discovery | **Done.** Editor, community cards, and search link to `/u/{username}` |
+| **4** | Media | **Done.** `/camera` uploads through Bunny |
+| **5** | Social | **In progress.** `/friends` lists accepted friends and pending requests. Messages and chatroom already use live data |
 | **6** | Live | Profile cam / LiveKit env + token flow |
 | **7** | Staff | Admin tools hub, moderation, audit logs |
 | **8** | Public surfaces | Public media preview, legal/compliance polish |
 
-### Production env still to validate
-- SMTP → email verification in strict mode
-- LiveKit → cam rooms
+### Production env
+- **Email:** Resend HTTPS API. `fuxem.com` is verified. `RESEND_API_KEY` lives only in the VPS `.env`.
+- LiveKit → cam rooms still to validate
 - ~~Bunny → member uploads~~ **configured on VPS**
 
-### Suggested next slice (pick one)
-1. **Post-signup flow** — `/nocode` success → `/profile` with checklist (city, gender, photo).
-2. **Camera → Bunny** — one upload pipeline; remove Supabase dependency for profile capture.
-3. **Community / search** — browse members with real profiles and avatars.
-4. **SMTP + verify email** — production mail so new accounts must verify before login.
+### Next slice
+- Finish social polish: message thread edge cases, then LiveKit cam rooms.
 
 ---
 

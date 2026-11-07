@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-import CreatorPlatformShell from '@/app/_components/creator-platform-shell'
+import FriendsClient from './_components/friends-client'
 import { AUTH_COOKIE_NAME, ROUTES, SESSION_MODE_DEFAULT_MEMBER } from '@/lib/constants'
 import type { AuthTokenPayload } from '@/lib/types'
 
@@ -51,5 +51,5 @@ async function requireAuthenticatedUserId(): Promise<string> {
 export default async function FriendsPage() {
   await requireAuthenticatedUserId()
 
-  return <CreatorPlatformShell initialView="friends" />
+  return <FriendsClient />
 }

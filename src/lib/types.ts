@@ -370,6 +370,18 @@ export interface FriendRequestsResponse {
   outgoing: PendingFriendRequest[]
 }
 
+export interface FriendListMember {
+  friendshipId: string
+  id: string
+  username: string
+  displayName: string
+  avatarUrl: string | null
+}
+
+export interface FriendListResponse {
+  friends: FriendListMember[]
+}
+
 export interface VideoFeedItem {
   id: string
   userId: string
