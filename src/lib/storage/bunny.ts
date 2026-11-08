@@ -68,7 +68,7 @@ export async function uploadToBunnyStorage(params: {
     method: 'PUT',
     headers: {
       AccessKey: storageApiKey,
-      'Content-Type': params.file.type || 'application/octet-stream',
+      'Content-Type': params.file.type.split(';')[0]?.trim() || 'application/octet-stream',
     },
     body: Buffer.from(await params.file.arrayBuffer()),
   })

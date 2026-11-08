@@ -13,6 +13,10 @@ const ALLOWED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime
 
 type UploadKind = 'photo' | 'video'
 
+function baseContentType(value: string): string {
+  return value.split(';')[0]?.trim().toLowerCase() || ''
+}
+
 function parseUploadKind(value: FormDataEntryValue | null): UploadKind | null {
   if (typeof value !== 'string') {
     return null
@@ -70,8 +74,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Your account cannot upload videos.' }, { status: 403 })
     }
 
-    const isValidImage = ALLOWED_IMAGE_TYPES.has(file.type)
-    const isValidVideo = ALLOWED_VIDEO_TYPES.has(file.type)
+    const contentType = baseContentType(file.type)
+    const isValidImage = ALLOWED_IMAGE_TYPES.has(contentType)
+    const isValidVideo = ALLOWED_VIDEO_TYPES.has(contentType)
 
     if (kind === 'photo' && !isValidImage) {
       return NextResponse.json({ error: 'Unsupported image type.' }, { status: 400 })
