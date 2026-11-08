@@ -6,24 +6,8 @@ import { NEW_MEMBER_PIN, QUICK_JOIN_PIN, ROUTES } from '@/lib/constants'
 
 const CP = "Copperplate, 'Copperplate Gothic Light', fantasy"
 
-function KeypadIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-9 w-9" fill="currentColor" aria-hidden="true">
-      <circle cx="5" cy="5" r="1.5" />
-      <circle cx="12" cy="5" r="1.5" />
-      <circle cx="19" cy="5" r="1.5" />
-      <circle cx="5" cy="12" r="1.5" />
-      <circle cx="12" cy="12" r="1.5" />
-      <circle cx="19" cy="12" r="1.5" />
-      <circle cx="5" cy="19" r="1.5" />
-      <circle cx="12" cy="19" r="1.5" />
-      <circle cx="19" cy="19" r="1.5" />
-    </svg>
-  )
-}
-
 export default function PinEntryBox() {
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(false)
   const [pin, setPin] = useState('')
   const [error, setError] = useState<'empty' | 'invalid' | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -134,7 +118,7 @@ export default function PinEntryBox() {
         <form
           onSubmit={handleSubmit}
           noValidate
-          className="absolute left-1/2 top-full z-30 mt-2 max-h-[calc(100dvh-5rem)] w-[min(16rem,calc(100vw-1rem))] -translate-x-1/2 overflow-y-auto rounded-2xl border border-white/20 bg-black/90 p-4 shadow-[0_16px_44px_rgba(0,0,0,0.6)] backdrop-blur-md sm:max-h-none sm:w-64 sm:overflow-visible"
+          className="absolute bottom-full left-1/2 z-30 mb-3 max-h-[calc(100dvh-8rem)] w-[min(16rem,calc(100vw-1rem))] -translate-x-1/2 overflow-y-auto rounded-2xl border border-white/20 bg-black/90 p-4 shadow-[0_16px_44px_rgba(0,0,0,0.6)] backdrop-blur-md sm:w-64"
         >
           <label
             htmlFor="access-code-input"
@@ -253,15 +237,22 @@ export default function PinEntryBox() {
         </form>
       )}
 
-      <button
-        type="button"
-        aria-label={open ? 'Close PIN entry' : 'Open PIN entry'}
-        aria-expanded={open}
-        onClick={togglePanel}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-black/30 text-white/50 backdrop-blur-sm transition hover:border-white/40 hover:text-white/80 active:scale-95 focus-visible:outline-none"
-      >
-        <KeypadIcon />
-      </button>
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          aria-label={open ? 'Close PIN entry' : 'Open PIN entry'}
+          aria-expanded={open}
+          onClick={togglePanel}
+          className="h-3.5 w-3.5 rounded-full border border-sky-200/70 bg-sky-500 shadow-[0_0_12px_rgba(56,189,248,0.85)] transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70"
+        />
+        <a
+          href="https://www.dyxmyx.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open dyxmyx.com"
+          className="h-3.5 w-3.5 rounded-full border border-rose-200/70 bg-rose-600 shadow-[0_0_12px_rgba(225,29,72,0.8)] transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/70"
+        />
+      </div>
     </div>
   )
 }

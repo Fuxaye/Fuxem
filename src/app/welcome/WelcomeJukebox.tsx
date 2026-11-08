@@ -42,7 +42,7 @@ export default function WelcomeJukebox() {
       loop
       playsInline
       preload="auto"
-      style={{ display: 'none' }}
+      className="pointer-events-none absolute h-px w-px opacity-0"
     />
   )
 }

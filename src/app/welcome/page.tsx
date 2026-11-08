@@ -57,10 +57,8 @@ export default function Welcome() {
         Sign Up
       </Link>
 
-      <div className="absolute left-1/2 top-4 z-30 -translate-x-1/2">
-        <div className="ui-panel px-4 py-3">
-          <PinEntryBox />
-        </div>
+      <div className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
+        <PinEntryBox />
       </div>
 
       <WelcomeJukebox />
