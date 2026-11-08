@@ -33,7 +33,7 @@ export default function Welcome() {
   return (
     <div className="ui-page-shell relative isolate min-h-screen overflow-hidden text-slate-100">
       <Image
-        src="/fuxembd1.jpg"
+        src="/3.jpg"
         alt=""
         fill
         priority
@@ -42,7 +42,7 @@ export default function Welcome() {
       />
 
       <Image
-        src="/fuxembd1.jpg"
+        src="/3.jpg"
         alt=""
         fill
         priority
