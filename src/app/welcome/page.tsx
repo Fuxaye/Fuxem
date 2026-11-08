@@ -38,15 +38,6 @@ export default function Welcome() {
         fill
         priority
         sizes="100vw"
-        className="scale-105 object-cover opacity-40 blur-[12px]"
-      />
-
-      <Image
-        src="/3.jpg"
-        alt=""
-        fill
-        priority
-        sizes="100vw"
         className="object-contain"
       />
 
