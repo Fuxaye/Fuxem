@@ -265,30 +265,36 @@ export default function PinEntryBox() {
           >
             Submit
           </button>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => openAgeGate('public')}
+              className="rounded-lg border border-white/20 bg-white/10 px-2 py-2 text-[9px] uppercase tracking-[0.12em] text-stone-200"
+              style={{ fontFamily: CP }}
+            >
+              Public 18+
+            </button>
+            <button
+              type="button"
+              onClick={() => openAgeGate('external')}
+              className="rounded-lg border border-white/20 bg-white/10 px-2 py-2 text-[9px] uppercase tracking-[0.12em] text-stone-200"
+              style={{ fontFamily: CP }}
+            >
+              dyxmyx 18+
+            </button>
+          </div>
         </form>
       )}
 
-      <div className="flex items-center gap-4">
-        <button
-          type="button"
-          aria-label={open ? 'Close PIN entry' : 'Open PIN entry'}
-          aria-expanded={open}
-          onClick={togglePanel}
-          className="h-3.5 w-3.5 rounded-full border border-sky-200/70 bg-sky-500 shadow-[0_0_12px_rgba(56,189,248,0.85)] transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70"
-        />
-        <button
-          type="button"
-          aria-label="Open public media"
-          onClick={() => openAgeGate('public')}
-          className="h-3.5 w-3.5 rounded-full border border-blue-200/80 bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.85)] transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300/70"
-        />
-        <button
-          type="button"
-          aria-label="Open dyxmyx.com"
-          onClick={() => openAgeGate('external')}
-          className="h-3.5 w-3.5 rounded-full border border-rose-200/70 bg-rose-600 shadow-[0_0_12px_rgba(225,29,72,0.8)] transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/70"
-        />
-      </div>
+      <button
+        type="button"
+        aria-label={open ? 'Close PIN entry' : 'Open PIN entry'}
+        aria-expanded={open}
+        onClick={togglePanel}
+        className="text-2xl leading-none transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+      >
+        🪐
+      </button>
       {ageGateOpen ? (
         <div
           role="dialog"
