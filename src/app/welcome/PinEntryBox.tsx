@@ -268,6 +268,14 @@ export default function PinEntryBox() {
         />
         <button
           type="button"
+          aria-label="Open public media"
+          onClick={() => {
+            window.location.assign('/publicmedia')
+          }}
+          className="h-3.5 w-3.5 rounded-full border border-blue-200/80 bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.85)] transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300/70"
+        />
+        <button
+          type="button"
           aria-label="Open dyxmyx.com"
           onClick={openAgeGate}
           className="h-3.5 w-3.5 rounded-full border border-rose-200/70 bg-rose-600 shadow-[0_0_12px_rgba(225,29,72,0.8)] transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/70"
