@@ -8,6 +8,7 @@ const CP = "Copperplate, 'Copperplate Gothic Light', fantasy"
 
 export default function PinEntryBox() {
   const [open, setOpen] = useState(false)
+  const [ageGateOpen, setAgeGateOpen] = useState(false)
   const [pin, setPin] = useState('')
   const [error, setError] = useState<'empty' | 'invalid' | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -105,6 +106,26 @@ export default function PinEntryBox() {
     setOpen(true)
     setError(null)
     setTimeout(() => inputRef.current?.focus(), 50)
+  }
+
+  function openAgeGate() {
+    setOpen(false)
+    setAgeGateOpen(true)
+  }
+
+  function acceptAgeGate() {
+    try {
+      sessionStorage.setItem('fuxem_age_verified', '1')
+    } catch {
+      // Continue even if the browser blocks storage.
+    }
+    setAgeGateOpen(false)
+    window.open('https://www.dyxmyx.com', '_blank', 'noopener,noreferrer')
+  }
+
+  function declineAgeGate() {
+    setAgeGateOpen(false)
+    window.location.href = 'https://www.google.com'
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -245,14 +266,48 @@ export default function PinEntryBox() {
           onClick={togglePanel}
           className="h-3.5 w-3.5 rounded-full border border-sky-200/70 bg-sky-500 shadow-[0_0_12px_rgba(56,189,248,0.85)] transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70"
         />
-        <a
-          href="https://www.dyxmyx.com"
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          type="button"
           aria-label="Open dyxmyx.com"
+          onClick={openAgeGate}
           className="h-3.5 w-3.5 rounded-full border border-rose-200/70 bg-rose-600 shadow-[0_0_12px_rgba(225,29,72,0.8)] transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/70"
         />
       </div>
+      {ageGateOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="welcome-age-gate-title"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 px-4"
+        >
+          <div className="w-full max-w-md rounded-xl border border-white/10 bg-[#05070f] p-8 text-center shadow-2xl">
+            <p className="mb-1 text-xs uppercase tracking-[0.18em] text-stone-500">Adults only</p>
+            <h2 id="welcome-age-gate-title" className="mb-4 text-2xl font-semibold tracking-tight text-white">
+              You must be 18 or older to enter
+            </h2>
+            <p className="mb-6 text-sm leading-relaxed text-stone-400">
+              This link contains sexually explicit adult content intended solely for consenting adults.
+              By continuing, you confirm you are at least 18 years of age and that viewing adult content is legal where you are located.
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <button
+                type="button"
+                onClick={acceptAgeGate}
+                className="rounded-lg bg-white px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-stone-200"
+              >
+                I am 18 or older — Enter
+              </button>
+              <button
+                type="button"
+                onClick={declineAgeGate}
+                className="rounded-lg border border-white/15 px-6 py-2.5 text-sm text-stone-400 transition hover:border-white/30 hover:text-stone-200"
+              >
+                I am under 18 — Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
