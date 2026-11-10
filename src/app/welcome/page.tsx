@@ -33,7 +33,7 @@ export default function Welcome() {
   return (
     <div className="ui-page-shell relative isolate min-h-screen overflow-hidden text-slate-100">
       <Image
-        src="/3.jpg"
+        src="/newpinkpunk.jpg"
         alt=""
         fill
         priority
