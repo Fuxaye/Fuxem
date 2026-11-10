@@ -3,12 +3,14 @@
 import { type FormEvent, useRef, useState } from 'react'
 
 import { NEW_MEMBER_PIN, QUICK_JOIN_PIN, ROUTES } from '@/lib/constants'
+import LegalLinks from '@/app/_components/legal-links'
 
 const CP = "Copperplate, 'Copperplate Gothic Light', fantasy"
 
 export default function PinEntryBox() {
   const [open, setOpen] = useState(false)
   const [ageGateOpen, setAgeGateOpen] = useState(false)
+  const [ageGateTarget, setAgeGateTarget] = useState<'public' | 'external' | null>(null)
   const [pin, setPin] = useState('')
   const [error, setError] = useState<'empty' | 'invalid' | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -108,23 +110,31 @@ export default function PinEntryBox() {
     setTimeout(() => inputRef.current?.focus(), 50)
   }
 
-  function openAgeGate() {
+  function openAgeGate(target: 'public' | 'external') {
     setOpen(false)
+    setAgeGateTarget(target)
     setAgeGateOpen(true)
   }
 
   function acceptAgeGate() {
+    const target = ageGateTarget
     try {
       sessionStorage.setItem('fuxem_age_verified', '1')
     } catch {
       // Continue even if the browser blocks storage.
     }
     setAgeGateOpen(false)
+    setAgeGateTarget(null)
+    if (target === 'public') {
+      window.location.assign(ROUTES.PUBLIC_MEDIA)
+      return
+    }
     window.open('https://www.dyxmyx.com', '_blank', 'noopener,noreferrer')
   }
 
   function declineAgeGate() {
     setAgeGateOpen(false)
+    setAgeGateTarget(null)
     window.location.href = 'https://www.google.com'
   }
 
@@ -269,15 +279,13 @@ export default function PinEntryBox() {
         <button
           type="button"
           aria-label="Open public media"
-          onClick={() => {
-            window.location.assign('/publicmedia')
-          }}
+          onClick={() => openAgeGate('public')}
           className="h-3.5 w-3.5 rounded-full border border-blue-200/80 bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.85)] transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300/70"
         />
         <button
           type="button"
           aria-label="Open dyxmyx.com"
-          onClick={openAgeGate}
+          onClick={() => openAgeGate('external')}
           className="h-3.5 w-3.5 rounded-full border border-rose-200/70 bg-rose-600 shadow-[0_0_12px_rgba(225,29,72,0.8)] transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/70"
         />
       </div>
@@ -294,8 +302,9 @@ export default function PinEntryBox() {
               You must be 18 or older to enter
             </h2>
             <p className="mb-6 text-sm leading-relaxed text-stone-400">
-              This link contains sexually explicit adult content intended solely for consenting adults.
-              By continuing, you confirm you are at least 18 years of age and that viewing adult content is legal where you are located.
+              {ageGateTarget === 'public'
+                ? 'Public previews contain sexually explicit adult content intended solely for consenting adults. By continuing, you confirm you are at least 18 years of age and that viewing adult content is legal where you are located.'
+                : 'This link contains sexually explicit adult content intended solely for consenting adults. By continuing, you confirm you are at least 18 years of age and that viewing adult content is legal where you are located.'}
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
               <button
@@ -312,6 +321,9 @@ export default function PinEntryBox() {
               >
                 I am under 18 — Leave
               </button>
+            </div>
+            <div className="mt-5">
+              <LegalLinks className="text-[11px] leading-relaxed" />
             </div>
           </div>
         </div>

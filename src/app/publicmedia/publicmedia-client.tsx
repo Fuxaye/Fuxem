@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import LegalLinks from '@/app/_components/legal-links'
 import { Badge } from '@/components/ui/badge'
@@ -45,28 +45,6 @@ export default function PublicMediaClient({
   const [selectedVideo, setSelectedVideo] = useState<PublicMediaVideo | null>(null)
   const [memberAction, setMemberAction] = useState<MemberAction | null>(null)
   const [memberNotice, setMemberNotice] = useState('')
-  const [ageVerified, setAgeVerified] = useState(false)
-
-  useEffect(() => {
-    try {
-      setAgeVerified(sessionStorage.getItem('fuxem_age_verified') === '1')
-    } catch {
-      setAgeVerified(false)
-    }
-  }, [])
-
-  function acceptPublicAgeGate() {
-    try {
-      sessionStorage.setItem('fuxem_age_verified', '1')
-    } catch {
-      // Show the page for this visit even if storage is blocked.
-    }
-    setAgeVerified(true)
-  }
-
-  function declinePublicAgeGate() {
-    window.location.href = 'https://www.google.com'
-  }
 
   const tags = useMemo(() => {
     const uniqueTags = new Set(videos.flatMap((video) => video.tags))
@@ -113,7 +91,6 @@ export default function PublicMediaClient({
       <div className="mx-auto w-full max-w-6xl">
         <PublicScreeningHeader />
 
-        {ageVerified ? (
         <div className="mt-10 lg:grid lg:grid-cols-[minmax(190px,0.28fr)_minmax(0,0.72fr)] lg:gap-8">
           <ProgramRail />
           <div className="min-w-0">
@@ -207,43 +184,10 @@ export default function PublicMediaClient({
             </div>
           </section>
         ) : null}
-        ) : (
-          <p className="mt-16 max-w-xl text-sm leading-6 text-[var(--text-muted)]">
-            Public previews stay hidden until you confirm your age below. The legal pages stay available either way.
-          </p>
-        )}
 
         <footer className="mt-16 border-t border-[var(--border-subtle)] pt-6 text-xs text-[var(--text-muted)]">
-          {ageVerified ? (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-secondary/90">18+ public viewing only. Full member interactions require an account.</p>
-          ) : (
-            <div className="max-w-xl">
-              <p className="text-xs uppercase tracking-[0.18em] text-stone-500">Adults only</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
-                You must be 18 or older to view public media
-              </h2>
-              <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted)]">
-                These previews are sexually explicit adult content for consenting adults. Confirm you are at least 18 and that viewing this content is legal where you are.
-              </p>
-              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={acceptPublicAgeGate}
-                  className="rounded-lg bg-white px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-stone-200"
-                >
-                  I am 18 or older — Enter
-                </button>
-                <button
-                  type="button"
-                  onClick={declinePublicAgeGate}
-                  className="rounded-lg border border-white/15 px-6 py-2.5 text-sm text-stone-400 transition hover:border-white/30 hover:text-stone-200"
-                >
-                  I am under 18 — Leave
-                </button>
-              </div>
-            </div>
-          )}
-          <div className="mt-6">
             <LegalLinks className="font-mono text-[10px] uppercase tracking-[0.12em]" />
           </div>
         </footer>
