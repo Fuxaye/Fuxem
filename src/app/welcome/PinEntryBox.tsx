@@ -291,9 +291,20 @@ export default function PinEntryBox() {
         aria-label={open ? 'Close PIN entry' : 'Open PIN entry'}
         aria-expanded={open}
         onClick={togglePanel}
-        className="text-2xl leading-none transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+        className="text-white opacity-40 transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
       >
-        🪐
+        <svg viewBox="0 0 42 56" className="h-12 w-9" fill="none" aria-hidden="true">
+          <rect x="2" y="2" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
+          <rect x="16" y="2" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
+          <rect x="30" y="2" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
+          <rect x="2" y="16" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
+          <rect x="16" y="16" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
+          <rect x="30" y="16" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
+          <rect x="2" y="30" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
+          <rect x="16" y="30" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
+          <rect x="30" y="30" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
+          <rect x="16" y="44" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
+        </svg>
       </button>
       {ageGateOpen ? (
         <div
