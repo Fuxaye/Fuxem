@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { FormEvent, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-import { MESSAGES, MIN_AGE, MIN_PASSWORD_LENGTH, ROUTES, USERNAME_REGEX } from '@/lib/constants'
+import { MESSAGES, MIN_PASSWORD_LENGTH, ROUTES, USERNAME_REGEX } from '@/lib/constants'
 import { getMaximumBirthDateIso, isIsoDateOfBirthOldEnough } from '@/lib/dob'
 
 type Availability = 'idle' | 'checking' | 'available' | 'taken' | 'error'
@@ -289,6 +289,7 @@ export default function NoCodeSignupPage() {
             <input
               type="date"
               autoComplete="bday"
+              required
               max={MAX_BIRTH_DATE}
               value={dateOfBirth}
               onChange={(event) => {
@@ -299,7 +300,7 @@ export default function NoCodeSignupPage() {
               className={fieldClass(!!errors.dateOfBirth)}
               aria-invalid={!!errors.dateOfBirth}
             />
-            <span className="mt-1 block text-[11px] font-normal normal-case tracking-normal text-stone-500">You must be at least {MIN_AGE} years old.</span>
+            <span className="mt-1 block text-[11px] font-normal normal-case tracking-normal text-stone-500">You must be over 18.</span>
             {errors.dateOfBirth && <span className="mt-1 block text-[11px] normal-case tracking-normal text-rose-300">{errors.dateOfBirth}</span>}
           </label>
 

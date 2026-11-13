@@ -3,14 +3,11 @@
 import { type FormEvent, useRef, useState } from 'react'
 
 import { NEW_MEMBER_PIN, QUICK_JOIN_PIN, ROUTES } from '@/lib/constants'
-import LegalLinks from '@/app/_components/legal-links'
 
 const CP = "Copperplate, 'Copperplate Gothic Light', fantasy"
 
 export default function PinEntryBox() {
   const [open, setOpen] = useState(false)
-  const [ageGateOpen, setAgeGateOpen] = useState(false)
-  const [ageGateTarget, setAgeGateTarget] = useState<'public' | 'external' | null>(null)
   const [pin, setPin] = useState('')
   const [error, setError] = useState<'empty' | 'invalid' | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -108,34 +105,6 @@ export default function PinEntryBox() {
     setOpen(true)
     setError(null)
     setTimeout(() => inputRef.current?.focus(), 50)
-  }
-
-  function openAgeGate(target: 'public' | 'external') {
-    setOpen(false)
-    setAgeGateTarget(target)
-    setAgeGateOpen(true)
-  }
-
-  function acceptAgeGate() {
-    const target = ageGateTarget
-    try {
-      sessionStorage.setItem('fuxem_age_verified', '1')
-    } catch {
-      // Continue even if the browser blocks storage.
-    }
-    setAgeGateOpen(false)
-    setAgeGateTarget(null)
-    if (target === 'public') {
-      window.location.assign(ROUTES.PUBLIC_MEDIA)
-      return
-    }
-    window.open('https://www.dyxmyx.com', '_blank', 'noopener,noreferrer')
-  }
-
-  function declineAgeGate() {
-    setAgeGateOpen(false)
-    setAgeGateTarget(null)
-    window.location.href = 'https://www.google.com'
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -265,24 +234,6 @@ export default function PinEntryBox() {
           >
             Submit
           </button>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => openAgeGate('public')}
-              className="rounded-lg border border-white/20 bg-white/10 px-2 py-2 text-[9px] uppercase tracking-[0.12em] text-stone-200"
-              style={{ fontFamily: CP }}
-            >
-              Public 18+
-            </button>
-            <button
-              type="button"
-              onClick={() => openAgeGate('external')}
-              className="rounded-lg border border-white/20 bg-white/10 px-2 py-2 text-[9px] uppercase tracking-[0.12em] text-stone-200"
-              style={{ fontFamily: CP }}
-            >
-              dyxmyx 18+
-            </button>
-          </div>
         </form>
       )}
 
@@ -306,45 +257,6 @@ export default function PinEntryBox() {
           <rect x="16" y="44" width="10" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
         </svg>
       </button>
-      {ageGateOpen ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="welcome-age-gate-title"
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 px-4"
-        >
-          <div className="w-full max-w-md rounded-xl border border-white/10 bg-[#05070f] p-8 text-center shadow-2xl">
-            <p className="mb-1 text-xs uppercase tracking-[0.18em] text-stone-500">Adults only</p>
-            <h2 id="welcome-age-gate-title" className="mb-4 text-2xl font-semibold tracking-tight text-white">
-              You must be 18 or older to enter
-            </h2>
-            <p className="mb-6 text-sm leading-relaxed text-stone-400">
-              {ageGateTarget === 'public'
-                ? 'Public previews contain sexually explicit adult content intended solely for consenting adults. By continuing, you confirm you are at least 18 years of age and that viewing adult content is legal where you are located.'
-                : 'This link contains sexually explicit adult content intended solely for consenting adults. By continuing, you confirm you are at least 18 years of age and that viewing adult content is legal where you are located.'}
-            </p>
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-              <button
-                type="button"
-                onClick={acceptAgeGate}
-                className="rounded-lg bg-white px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-stone-200"
-              >
-                I am 18 or older — Enter
-              </button>
-              <button
-                type="button"
-                onClick={declineAgeGate}
-                className="rounded-lg border border-white/15 px-6 py-2.5 text-sm text-stone-400 transition hover:border-white/30 hover:text-stone-200"
-              >
-                I am under 18 — Leave
-              </button>
-            </div>
-            <div className="mt-5">
-              <LegalLinks className="text-[11px] leading-relaxed" />
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   )
 }

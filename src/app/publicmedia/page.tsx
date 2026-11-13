@@ -13,13 +13,23 @@ export const metadata: Metadata = {
 }
 
 export default async function PublicMediaPage() {
-  const { videos, isAuthenticated } = await getPublicMediaPageData()
+  try {
+    const { videos, isAuthenticated } = await getPublicMediaPageData()
 
-  return (
-    <PublicMediaClient
-      videos={videos}
-      isAuthenticated={isAuthenticated}
-      initialError={null}
-    />
-  )
+    return (
+      <PublicMediaClient
+        videos={videos}
+        isAuthenticated={isAuthenticated}
+        initialError={null}
+      />
+    )
+  } catch {
+    return (
+      <PublicMediaClient
+        videos={[]}
+        isAuthenticated={false}
+        initialError="Public videos are unavailable right now."
+      />
+    )
+  }
 }

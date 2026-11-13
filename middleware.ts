@@ -9,6 +9,8 @@ const PUBLIC_PATHS = [
   '/public',
   '/publicmedia',
   '/legal',
+  '/contact',
+  '/help',
   '/video',
   '/onboarding',
   '/log-in',

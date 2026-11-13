@@ -6,6 +6,12 @@ import Link from 'next/link'
 import { ROUTES } from '@/lib/constants'
 
 const STORAGE_KEY = 'fuxem_cookie_consent'
+const OPEN_EVENT = 'fuxem-open-cookie-preferences'
+
+export function openCookiePreferences() {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new Event(OPEN_EVENT))
+}
 
 type ConsentState = 'accepted' | 'declined' | null
 
@@ -19,6 +25,13 @@ export default function CookieConsent() {
     } catch {
       setState(null)
     }
+
+    function reopen() {
+      setState(null)
+    }
+
+    window.addEventListener(OPEN_EVENT, reopen)
+    return () => window.removeEventListener(OPEN_EVENT, reopen)
   }, [])
 
   function handleAccept() {

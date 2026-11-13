@@ -18,6 +18,8 @@ describe('date of birth validation', () => {
     expect(parseIsoDateOfBirth('not-a-date')).toBeNull()
     expect(parseIsoDateOfBirth('2026-13-01')).toBeNull()
     expect(isIsoDateOfBirthOldEnough('2020-01-01')).toBe(false)
+    expect(isIsoDateOfBirthOldEnough('2008-11-06')).toBe(false)
+    expect(isIsoDateOfBirthOldEnough('2008-11-05')).toBe(true)
     expect(isIsoDateOfBirthOldEnough('2007-11-05')).toBe(true)
   })
 

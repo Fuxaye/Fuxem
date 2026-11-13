@@ -13,6 +13,7 @@ const LINKS = [
   { href: ROUTES.LEGAL_COMMUNITY_GUIDELINES, label: 'Community' },
   { href: ROUTES.LEGAL_DMCA, label: 'DMCA' },
   { href: ROUTES.LEGAL_2257, label: '2257' },
+  { href: ROUTES.CONTACT, label: 'Contact' },
 ]
 
 export default function LegalLinks({

@@ -18,12 +18,18 @@ function LoginForm() {
   const params = useSearchParams()
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
+  const [over18, setOver18] = useState(false)
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
   const verified = params.get('verified') === '1'
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
+    if (!over18) {
+      setError(MESSAGES.AGE_CONFIRMATION_REQUIRED)
+      return
+    }
+
     setPending(true)
     setError('')
 
@@ -34,6 +40,7 @@ function LoginForm() {
         identifier: identifier.trim(),
         password,
         passcode: NEW_MEMBER_PIN,
+        over18: true,
         returnTo: safeReturnTo(params.get('returnTo')),
       }),
     })
@@ -43,6 +50,12 @@ function LoginForm() {
       const data = (await response.json().catch(() => null)) as { error?: string } | null
       setError(data?.error || 'Invalid credentials')
       return
+    }
+
+    try {
+      sessionStorage.setItem('fuxem_age_verified', '1')
+    } catch {
+      // The checkbox already confirmed age for this login.
     }
 
     const data = (await response.json()) as { returnTo?: string }
@@ -115,6 +128,20 @@ function LoginForm() {
               onChange={(event) => setPassword(event.target.value)}
               required
             />
+            <label className="flex items-start gap-3 text-sm text-stone-200">
+              <input
+                type="checkbox"
+                name="over18"
+                checked={over18}
+                onChange={(event) => {
+                  setOver18(event.target.checked)
+                  setError('')
+                }}
+                required
+                className="mt-0.5 h-4 w-4 rounded border-white/20 bg-white/5 accent-pink-500"
+              />
+              <span>I&apos;m still over 18</span>
+            </label>
             {error ? (
               <p role="alert" className="text-sm text-rose-300">
                 {error}

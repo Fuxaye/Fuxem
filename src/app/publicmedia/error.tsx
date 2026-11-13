@@ -2,6 +2,7 @@
 
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 
+import ComplianceFooter from '@/app/_components/compliance-footer'
 import { Button } from '@/components/ui/button'
 
 export default function PublicMediaError({ reset }: { reset: () => void }) {
@@ -20,6 +21,7 @@ export default function PublicMediaError({ reset }: { reset: () => void }) {
           <RefreshCw className="h-4 w-4" aria-hidden="true" />
           Try again
         </Button>
+        <ComplianceFooter />
       </section>
     </main>
   )

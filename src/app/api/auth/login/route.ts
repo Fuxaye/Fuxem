@@ -38,8 +38,13 @@ type ParsedLoginInput = {
   identifier: string
   secret: string
   psk: string
+  over18: boolean
   returnTo: string
   requestKind: 'json' | 'form'
+}
+
+function readOver18(value: unknown): boolean {
+  return value === true || value === 'true' || value === 'on' || value === '1'
 }
 
 type LoginUser = {
@@ -89,6 +94,7 @@ async function parseLoginInput(request: NextRequest): Promise<ParsedLoginInput> 
       identifier: (body.identifier || body.email || body.username || '').trim(),
       secret: (body.secret || body.password || '').trim(),
       psk: (body.psk || '').trim(),
+      over18: readOver18(body.over18),
       returnTo: getSafeReturnTo(body.returnTo || null),
       requestKind,
     }
@@ -100,6 +106,7 @@ async function parseLoginInput(request: NextRequest): Promise<ParsedLoginInput> 
     identifier: String(formData.get('identifier') || formData.get('email') || formData.get('username') || '').trim(),
     secret: String(formData.get('secret') || formData.get('password') || '').trim(),
     psk: String(formData.get('psk') || '').trim(),
+    over18: readOver18(formData.get('over18')),
     returnTo: getSafeReturnTo(String(formData.get('returnTo') || ROUTES.ME_PROFILE)),
     requestKind,
   }
@@ -273,7 +280,7 @@ async function createPresharedUser() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { code, identifier, secret, psk, returnTo, requestKind } = await parseLoginInput(request)
+    const { code, identifier, secret, psk, over18, returnTo, requestKind } = await parseLoginInput(request)
     const normalizedCode = code.toUpperCase()
 
     const jwtSecret = process.env.JWT_SECRET
@@ -409,6 +416,10 @@ export async function POST(request: NextRequest) {
 
     if (!secret) {
       return buildErrorResponse(request, requestKind, MESSAGES.LOGIN_PASSWORD_REQUIRED, 400)
+    }
+
+    if (!over18) {
+      return buildErrorResponse(request, requestKind, MESSAGES.AGE_CONFIRMATION_REQUIRED, 400)
     }
 
     const normalizedIdentifier = identifier.toLowerCase()
