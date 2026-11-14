@@ -1,0 +1,3 @@
+ALTER TABLE "Profile" ADD COLUMN "selfDescription" TEXT;
+ALTER TABLE "Profile" ADD COLUMN "pronouns" TEXT;
+ALTER TABLE "Profile" ADD COLUMN "roles" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[];
