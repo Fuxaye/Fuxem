@@ -105,6 +105,12 @@ export default async function UserPage({
                 Message
               </Link>
               <Link
+                href={`/u/${user.username}/pyx`}
+                className="rounded-lg border border-white/20 bg-white/[0.03] px-4 py-2 text-sm text-stone-100 transition hover:border-white/35 hover:bg-white/[0.1]"
+              >
+                Pictures
+              </Link>
+              <Link
                 href={`/u/${user.username}/videos`}
                 className="rounded-lg border border-white/20 bg-white/[0.03] px-4 py-2 text-sm text-stone-100 transition hover:border-white/35 hover:bg-white/[0.1]"
               >
@@ -177,12 +183,14 @@ export default async function UserPage({
       <section className="mt-6 rounded-3xl border border-white/10 bg-black/35 p-6 backdrop-blur-sm">
         <div className="flex items-center justify-between gap-3">
           <p className="text-[11px] uppercase tracking-[0.18em] text-stone-400">Media Preview</p>
-          <Link
-            href={`/u/${user.username}/videos`}
-            className="text-xs text-amber-200 transition hover:text-amber-100"
-          >
-            See all media
-          </Link>
+          <span className="flex gap-3">
+            <Link href={`/u/${user.username}/pyx`} className="text-xs text-amber-200 transition hover:text-amber-100">
+              Pictures
+            </Link>
+            <Link href={`/u/${user.username}/videos`} className="text-xs text-amber-200 transition hover:text-amber-100">
+              Videos
+            </Link>
+          </span>
         </div>
 
         {mediaPreview.length > 0 ? (

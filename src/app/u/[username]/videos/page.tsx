@@ -16,7 +16,6 @@ export default async function UserVideosPage({
       username: true,
       displayName: true,
       videos: {
-        where: { isPublic: true },
         orderBy: { createdAt: 'desc' },
         select: {
           id: true,
@@ -37,7 +36,7 @@ export default async function UserVideosPage({
     <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-10 text-slate-100">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Public Videos</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Member Videos</p>
           <h1 className="mt-2 text-2xl font-semibold text-slate-100">
             {user.displayName} (@{user.username})
           </h1>
@@ -49,7 +48,7 @@ export default async function UserVideosPage({
 
       {user.videos.length === 0 ? (
         <div className="rounded-xl border border-white/10 bg-black/30 p-6 text-sm text-slate-300">
-          No public videos yet.
+          No videos yet.
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

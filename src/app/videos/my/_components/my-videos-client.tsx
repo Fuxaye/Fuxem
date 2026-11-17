@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { createVideo, deleteVideo, fetchMyVideos, updateVideo } from '@/lib/api'
+import { uploadProfilePhotos, uploadProfileVideos } from '@/lib/photo-upload'
 import { ROUTES } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import type { VideoFeedItem } from '@/lib/types'
@@ -54,11 +55,13 @@ function FeedbackMessage({ tone, children }: { tone: 'error' | 'success'; childr
 function VideoCard({
   video,
   pendingId,
+  canSharePublic,
   onTogglePublic,
   onDelete,
 }: {
   video: VideoFeedItem
   pendingId: string | null
+  canSharePublic: boolean
   onTogglePublic: (video: VideoFeedItem) => void
   onDelete: (videoId: string) => void
 }) {
@@ -91,7 +94,7 @@ function VideoCard({
             )}
           >
             {video.isPublic ? <Eye className="h-3 w-3" aria-hidden="true" /> : <LockKeyhole className="h-3 w-3" aria-hidden="true" />}
-            {video.isPublic ? 'Public' : 'Private'}
+            {video.isPublic ? 'Public media' : 'Members'}
           </Badge>
           <span className="rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-medium text-white/80 backdrop-blur-md">
             {video.views} views
@@ -126,22 +129,24 @@ function VideoCard({
             <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
             Open
           </a>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={() => onTogglePublic(video)}
-            disabled={isPending}
-            className={cn(
-              'min-h-11 gap-2 px-3 text-xs',
-              video.isPublic
-                ? 'border border-amber-200/30 bg-amber-300/10 text-amber-100 hover:bg-amber-300/20'
-                : 'border border-teal/30 bg-teal/10 text-[#a6ffff] hover:bg-teal/20'
-            )}
-          >
-            {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : video.isPublic ? <LockKeyhole className="h-3.5 w-3.5" aria-hidden="true" /> : <Eye className="h-3.5 w-3.5" aria-hidden="true" />}
-            {isPending ? 'Saving...' : video.isPublic ? 'Make Private' : 'Make Public'}
-          </Button>
+          {canSharePublic ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => onTogglePublic(video)}
+              disabled={isPending}
+              className={cn(
+                'min-h-11 gap-2 px-3 text-xs',
+                video.isPublic
+                  ? 'border border-amber-200/30 bg-amber-300/10 text-amber-100 hover:bg-amber-300/20'
+                  : 'border border-teal/30 bg-teal/10 text-[#a6ffff] hover:bg-teal/20'
+              )}
+            >
+              {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : video.isPublic ? <LockKeyhole className="h-3.5 w-3.5" aria-hidden="true" /> : <Eye className="h-3.5 w-3.5" aria-hidden="true" />}
+              {isPending ? 'Saving...' : video.isPublic ? 'Members only' : 'Share to public media'}
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="destructive"
@@ -175,7 +180,13 @@ function VideoCardSkeleton() {
   )
 }
 
-export default function MyVideosClient() {
+export default function MyVideosClient({
+  username,
+  canSharePublic,
+}: {
+  username: string
+  canSharePublic: boolean
+}) {
   const [videos, setVideos] = useState<VideoFeedItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
@@ -185,7 +196,8 @@ export default function MyVideosClient() {
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [videoUrl, setVideoUrl] = useState('')
+  const [videoFile, setVideoFile] = useState<File | null>(null)
+  const [photoMessage, setPhotoMessage] = useState('')
   const [thumbnailUrl, setThumbnailUrl] = useState('')
   const [isPublic, setIsPublic] = useState(false)
   const [ownershipCertified, setOwnershipCertified] = useState(false)
@@ -223,25 +235,49 @@ export default function MyVideosClient() {
       setError('')
       setSuccess('')
 
+      if (!videoFile) {
+        setError('Choose a video file to upload.')
+        return
+      }
+
+      const [uploadedUrl] = await uploadProfileVideos(username, [videoFile])
+
       const response = await createVideo({
         title,
         description,
-        videoUrl,
+        videoUrl: uploadedUrl,
         thumbnailUrl,
-        isPublic,
+        isPublic: canSharePublic && isPublic,
         ownershipCertified,
       })
 
       setVideos((current) => [response.video, ...current])
       setTitle('')
       setDescription('')
-      setVideoUrl('')
+      setVideoFile(null)
       setThumbnailUrl('')
       setIsPublic(false)
       setOwnershipCertified(false)
-      setSuccess('Video uploaded successfully.')
+      setSuccess(response.video.isPublic ? 'Video is on public media.' : 'Video is visible to members.')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to upload video.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handlePhotoUpload(files: FileList | null) {
+    if (!files || files.length === 0) return
+
+    try {
+      setIsSubmitting(true)
+      setError('')
+      setSuccess('')
+      setPhotoMessage('')
+      const urls = await uploadProfilePhotos(username, files)
+      setPhotoMessage(`${urls.length} picture${urls.length === 1 ? '' : 's'} saved to /u/${username}/pyx.`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to upload pictures.')
     } finally {
       setIsSubmitting(false)
     }
@@ -262,7 +298,7 @@ export default function MyVideosClient() {
         current.map((item) => (item.id === response.video.id ? response.video : item))
       )
 
-      setSuccess(response.video.isPublic ? 'Video is now public.' : 'Video is now private.')
+      setSuccess(response.video.isPublic ? 'Video is on public media.' : 'Video is visible to members.')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to update visibility.')
     } finally {
@@ -293,33 +329,64 @@ export default function MyVideosClient() {
         <div className="relative p-5 sm:p-7">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="min-w-0 max-w-3xl">
-              <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-primary/90">Video library</p>
+              <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-primary/90">Manage media</p>
               <h1
                 id="video-vault-title"
                 className="mt-2 max-w-full overflow-hidden bg-[radial-gradient(ellipse,_rgb(228_228_231)_0%,_rgb(0_0_0)_100%)] bg-clip-text text-ellipsis whitespace-nowrap text-3xl font-[family:var(--font-display)] font-medium uppercase leading-tight tracking-[0.02em] text-transparent sm:text-4xl"
               >
-                My Video Vault
+                Manage media
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">
-                Post your clips and control whether each one is visible in the public stream.
+                Pictures go to /u/{username}/pyx. Videos go to /u/{username}/videos and stay visible to signed-in members.
+                {canSharePublic ? ' A model account can also share a video on /publicmedia, which anyone can watch without an account.' : ''}
               </p>
             </div>
 
             <div className="flex shrink-0 flex-wrap items-center gap-3">
               <Link
-                href={ROUTES.PUBLIC_STREAM}
+                href={`/u/${username}/pyx`}
                 className={cn(buttonVariants({ variant: 'outline', size: 'default' }), 'min-h-11 gap-2 px-4 text-xs uppercase tracking-[0.12em]', quietButtonClass)}
               >
-                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-                Watch Stream
+                Pictures
+              </Link>
+              <Link
+                href={`/u/${username}/videos`}
+                className={cn(buttonVariants({ variant: 'outline', size: 'default' }), 'min-h-11 gap-2 px-4 text-xs uppercase tracking-[0.12em]', quietButtonClass)}
+              >
+                Videos
               </Link>
               <Badge variant="outline" className="min-h-11 gap-2 border-teal/30 bg-teal/10 px-3 text-[10px] uppercase tracking-[0.12em] text-[#a6ffff]">
                 <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-                Verified model
+                {canSharePublic ? 'Model account' : 'Members only'}
               </Badge>
             </div>
           </div>
         </div>
+      </Card>
+
+      <Card className={cn(surfaceClass, 'mt-6 rounded-3xl')}>
+        <CardHeader className="gap-2 p-5 sm:p-7">
+          <CardTitle className="text-xl text-[var(--text-primary)]">Pictures</CardTitle>
+          <CardDescription className="leading-5 text-[var(--text-muted)]">
+            Pictures are stored in your Bunny folder and shown to signed-in members at /u/{username}/pyx.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="px-5 pb-5 sm:px-7 sm:pb-7">
+          <Label htmlFor="picture-files" className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">Picture files</Label>
+          <Input
+            id="picture-files"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            multiple
+            disabled={isSubmitting}
+            className={cn(fieldClass, 'mt-2')}
+            onChange={(event) => {
+              void handlePhotoUpload(event.target.files)
+              event.currentTarget.value = ''
+            }}
+          />
+          {photoMessage ? <p className="mt-3 text-sm text-emerald-100">{photoMessage}</p> : null}
+        </CardContent>
       </Card>
 
       <Card id="post-video" className={cn(surfaceClass, 'mt-6 rounded-3xl')}>
@@ -330,9 +397,9 @@ export default function MyVideosClient() {
             </div>
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary/80">Create from the vault</p>
-              <CardTitle id="post-video-title" className="mt-1 text-xl text-[var(--text-primary)]">Post a video</CardTitle>
+              <CardTitle id="post-video-title" className="mt-1 text-xl text-[var(--text-primary)]">Upload a video</CardTitle>
               <CardDescription className="mt-2 max-w-2xl leading-5 text-[var(--text-muted)]">
-                Add a hosted clip, then decide whether it belongs in the public stream.
+                The file is stored in your folder on Bunny. Members can watch it on your videos page.
               </CardDescription>
             </div>
           </div>
@@ -357,20 +424,19 @@ export default function MyVideosClient() {
             </div>
 
             <div>
-              <Label htmlFor="video-url" className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                Video URL <span aria-hidden="true" className="text-secondary">*</span>
+              <Label htmlFor="video-file" className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                Video file <span aria-hidden="true" className="text-secondary">*</span>
               </Label>
               <Input
-                id="video-url"
-                type="url"
-                value={videoUrl}
-                onChange={(event) => setVideoUrl(event.target.value)}
+                id="video-file"
+                type="file"
+                accept="video/mp4,video/webm,video/quicktime,.mp4,.mov,.webm"
                 required
-                aria-describedby="video-url-help"
+                aria-describedby="video-file-help"
                 className={fieldClass}
-                placeholder="https://..."
+                onChange={(event) => setVideoFile(event.target.files?.[0] ?? null)}
               />
-              <p id="video-url-help" className="mt-2 text-xs leading-4 text-[var(--text-muted)]">Use the hosted URL viewers should open.</p>
+              <p id="video-file-help" className="mt-2 text-xs leading-4 text-[var(--text-muted)]">MP4, MOV, or WebM, up to 100 MB.</p>
             </div>
 
             <div className="md:col-span-2">
@@ -415,25 +481,31 @@ export default function MyVideosClient() {
                   />
                   <span className="leading-5">I certify this video belongs to me and I have the rights to publish it.</span>
                 </label>
-                <label htmlFor="video-public" className="flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border border-[var(--border-subtle)] bg-[rgba(13,12,20,0.4)] px-4 py-3 text-sm text-[var(--text-primary)] transition hover:border-primary/35">
-                  <input
-                    id="video-public"
-                    type="checkbox"
-                    checked={isPublic}
-                    onChange={(event) => setIsPublic(event.target.checked)}
-                    aria-describedby="publishing-help"
-                    className="mt-0.5 h-5 w-5 shrink-0 accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                  />
-                  <span className="leading-5">
-                    <span className="font-semibold">Make public</span>
-                    <span className="mt-0.5 block text-xs text-[var(--text-muted)]">Show this clip in the public stream.</span>
-                  </span>
-                </label>
+                {canSharePublic ? (
+                  <label htmlFor="video-public" className="flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border border-[var(--border-subtle)] bg-[rgba(13,12,20,0.4)] px-4 py-3 text-sm text-[var(--text-primary)] transition hover:border-primary/35">
+                    <input
+                      id="video-public"
+                      type="checkbox"
+                      checked={isPublic}
+                      onChange={(event) => setIsPublic(event.target.checked)}
+                      aria-describedby="publishing-help"
+                      className="mt-0.5 h-5 w-5 shrink-0 accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    />
+                    <span className="leading-5">
+                      <span className="font-semibold">Share to public media</span>
+                      <span className="mt-0.5 block text-xs text-[var(--text-muted)]">Anyone can watch this on /publicmedia without an account.</span>
+                    </span>
+                  </label>
+                ) : (
+                  <p className="rounded-xl border border-[var(--border-subtle)] bg-[rgba(13,12,20,0.4)] px-4 py-3 text-sm leading-5 text-[var(--text-muted)]">
+                    This account can share videos with other members. Public media sharing is available on a model account.
+                  </p>
+                )}
               </div>
               <p id="publishing-help" className={cn('mt-3 text-xs leading-5', isPublic && !ownershipCertified ? 'text-amber-200' : 'text-[var(--text-muted)]')}>
-                {isPublic && !ownershipCertified
-                  ? 'Ownership certification is required before this video can be published publicly.'
-                  : 'Private videos stay in your vault until you choose to publish them.'}
+                {canSharePublic && isPublic && !ownershipCertified
+                  ? 'Ownership certification is required before this video can be shared on public media.'
+                  : 'Members who are signed in can watch this on your videos page.'}
               </p>
             </fieldset>
 
@@ -501,6 +573,7 @@ export default function MyVideosClient() {
                 key={video.id}
                 video={video}
                 pendingId={pendingId}
+                canSharePublic={canSharePublic}
                 onTogglePublic={(item) => {
                   void handleTogglePublic(item)
                 }}

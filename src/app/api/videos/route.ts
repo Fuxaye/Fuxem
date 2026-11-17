@@ -177,14 +177,11 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (!user) {
+    if (!user || user.status !== 'active') {
       return NextResponse.json({ error: MESSAGES.LOGIN_INVALID }, { status: 404 })
     }
 
-    // Posting videos is restricted to active verified model accounts.
-    if (user.role !== 'MODEL_VERIFIED' || user.status !== 'active') {
-      return NextResponse.json({ error: MESSAGES.VIDEO_FORBIDDEN }, { status: 403 })
-    }
+    const canSharePublic = user.role === 'MODEL_VERIFIED'
 
     const body = (await request.json().catch(() => null)) as Record<string, unknown> | null
 
@@ -201,6 +198,13 @@ export async function POST(request: NextRequest) {
 
     if (!title || !videoUrl) {
       return NextResponse.json({ error: MESSAGES.FIELD_REQUIRED }, { status: 400 })
+    }
+
+    if (isPublic && !canSharePublic) {
+      return NextResponse.json(
+        { error: 'Only a model account can share a video on public media.' },
+        { status: 403 }
+      )
     }
 
     if (isPublic && !ownershipCertified) {

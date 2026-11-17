@@ -173,7 +173,7 @@ function SidebarNav({ profileHref }: { profileHref?: string }) {
                           : 'text-text-muted hover:bg-bg-surface/40'
                       )}
                     >
-                      Post Videos
+                      Manage media
                     </div>
                   </Link>
                 </div>

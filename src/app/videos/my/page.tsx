@@ -73,11 +73,8 @@ export default async function MyVideosPage() {
     redirect(`${ROUTES.LOGIN}?returnTo=${encodeURIComponent(ROUTES.MY_VIDEOS)}`)
   }
 
-  if (user.role !== 'MODEL_VERIFIED') {
-    redirect(ROUTES.PUBLIC_STREAM)
-  }
-
   const accountCategoryLabel = getAccountCategoryLabel(user.role)
+  const canSharePublic = user.role === 'MODEL_VERIFIED'
 
   const profileHref = !user.profile?.avatarUrl || !user.profile?.bio?.trim()
     ? ROUTES.ONBOARDING
@@ -96,7 +93,7 @@ export default async function MyVideosPage() {
       }}
     >
       <div className={redHatText.variable}>
-        <MyVideosClient />
+        <MyVideosClient username={user.username} canSharePublic={canSharePublic} />
       </div>
     </MemberLayout>
   )

@@ -26,7 +26,7 @@ export async function uploadMemberMediaBlob(
   return uploadMemberMedia(kind, file)
 }
 
-export async function uploadProfilePhotos(_userId: string, files: FileList): Promise<string[]> {
+export async function uploadProfilePhotos(_userId: string, files: ArrayLike<File>): Promise<string[]> {
   const uploadedUrls: string[] = []
 
   for (const file of Array.from(files)) {
@@ -36,7 +36,7 @@ export async function uploadProfilePhotos(_userId: string, files: FileList): Pro
   return uploadedUrls
 }
 
-export async function uploadProfileVideos(_userId: string, files: FileList): Promise<string[]> {
+export async function uploadProfileVideos(_userId: string, files: ArrayLike<File>): Promise<string[]> {
   const uploadedUrls: string[] = []
 
   for (const file of Array.from(files)) {

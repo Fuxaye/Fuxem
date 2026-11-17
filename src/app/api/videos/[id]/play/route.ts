@@ -64,11 +64,10 @@ export async function GET(
       Boolean(requesterId) || isValidPublicPlaybackToken(playbackToken, video.id)
     )
 
-    const canPlayPrivate = Boolean(requesterId) && (
-      requesterId === video.userId
-    )
+    // Signed-in members can watch member videos. Public playback stays limited to shared clips.
+    const canPlayAsMember = Boolean(requesterId)
 
-    if (!canPlayPublic && !canPlayPrivate) {
+    if (!canPlayPublic && !canPlayAsMember) {
       return NextResponse.json({ error: MESSAGES.AUTH_REQUIRED }, { status: 401 })
     }
 
